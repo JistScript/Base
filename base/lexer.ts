@@ -1,7 +1,6 @@
 // Types of token //
 export enum TokenType {
   Number,
-  Null,
   Identifier,
   Let,
   Equals,
@@ -14,7 +13,6 @@ export enum TokenType {
 // Pre-rendered //
 const ReservedKeywords: Record<string, TokenType> = {
   let: TokenType.Let,
-  null: TokenType.Null,
 };
 
 export interface Token {
@@ -78,8 +76,9 @@ export function tokenize(sourceCode: string): Token[] {
           const reserved = ReservedKeywords[alpha];
           if (typeof reserved == "number") {
             tokens.push(createToken(alpha, reserved));
+          } else {
+            tokens.push(createToken(alpha, TokenType.Identifier));
           }
-          continue;
         } else if (isNumeric(char)) {
           let num = "";
           while (index < source.length && isNumeric(source[index])) {
