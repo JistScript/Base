@@ -5,6 +5,7 @@ import {
   BinaryExpr,
   Identifier,
   NumericLiteral,
+  NullLiteral,
 } from "./typeAst.ts";
 import { tokenize, Token, TokenType } from "./lexer.ts";
 
@@ -98,6 +99,9 @@ export default class Parser {
     switch (tk) {
       case TokenType.Identifier:
         return { kind: "Identifier", symbol: this.next().value } as Identifier;
+      case TokenType.Null:
+        this.next();
+        return { kind: "NullLiteral", value: "null" } as NullLiteral;
       case TokenType.Number:
         return {
           kind: "NumericLiteral",
