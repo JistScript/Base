@@ -1,4 +1,5 @@
 import Parser from "./base/parser.ts";
+import { evaluate } from "./runTime/interpreter.ts";
 
 repl();
 
@@ -11,6 +12,7 @@ async function repl() {
       Deno.exit(1);
     }
     const program = parser.proTypeAsst(input);
-    console.log(program);
+    const results = evaluate(program);
+    console.log(results);
   }
 }

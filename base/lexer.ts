@@ -79,12 +79,14 @@ export function tokenize(sourceCode: string): Token[] {
           if (typeof reserved == "number") {
             tokens.push(createToken(alpha, reserved));
           }
+          continue;
         } else if (isNumeric(char)) {
           let num = "";
           while (index < source.length && isNumeric(source[index])) {
             num += source[index++];
           }
           tokens.push(createToken(num, TokenType.Number));
+          continue;
         } else if (isSkippable(char)) {
           index++;
           continue;
