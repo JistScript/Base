@@ -5,6 +5,7 @@ import {
   BinaryExpr,
   Identifier,
   NumericLiteral,
+  VarDeclaration,
 } from "./typeAst.ts";
 import { tokenize, Token, TokenType } from "./lexer.ts";
 
@@ -48,12 +49,52 @@ export default class Parser {
   }
 
   private parseStatement(): Statement {
-    // skip parseStatement //
-    return this.parse_add_expr();
+    // skip parseStatement
+    switch (this.at().type) {
+      case TokenType.Let:
+      case TokenType.Const:
+        return this.parse_var_declaration();
+      default:
+        return this.parseExpression();
+    }
+  }
+
+  parse_var_declaration(): Statement {
+    const isConstant = this.next().type == TokenType.Const;
+    const identifier = this.expectRender(
+      TokenType.Identifier,
+      "Expected Identifier to let or const keywords"
+    ).value;
+    if (this.at().type == TokenType.Semicolon) {
+      this.next();
+      if (isConstant) {
+        throw "Assigned value to constant, but no value provided";
+      }
+      return {
+        kind: "VarDeclaration",
+        identifier,
+        constant: false,
+      } as VarDeclaration;
+    }
+    this.expectRender(
+      TokenType.Equals,
+      "Expected equals tokens identifier in var declaraytion"
+    );
+    const declaration = {
+      kind: "VarDeclaration",
+      value: this.parseExpression(),
+      identifier,
+      constant: isConstant,
+    } as VarDeclaration;
+    this.expectRender(
+      TokenType.Semicolon,
+      "Var declaration state must end with semicolon"
+    );
+    return declaration;
   }
 
   private parseExpression(): Expression {
-    return this.parse_prime_expr();
+    return this.parse_add_expr();
   }
 
   // add and sub //
@@ -108,7 +149,7 @@ export default class Parser {
         const value = this.parseExpression();
         this.expectRender(
           TokenType.CloseParen,
-          "Unexpected token found inside expression, Expecting closing parenthesis",
+          "Unexpected token found inside expression, Expecting closing parenthesis"
         );
         return value;
       }

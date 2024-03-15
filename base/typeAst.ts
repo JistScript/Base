@@ -6,7 +6,7 @@ export type NodeType =
   | "CallExpr"
   | "UnaryExpr"
   | "FunctionDeclaration"
-  | "VariableDeclaration"
+  | "VarDeclaration"
   | "StringLiteral"
   | "BooleanLiteral"
   | "ArrayLiteral"
@@ -67,6 +67,13 @@ export interface Statement {
 export interface Program extends Statement {
   kind: "Program";
   body: Statement[];
+}
+
+export interface VarDeclaration extends Statement {
+  kind: "VarDeclaration";
+  constant: boolean;
+  identifier: string;
+  value?: Expression;
 }
 
 export interface Expression extends Statement {}

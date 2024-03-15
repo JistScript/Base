@@ -3,7 +3,9 @@ export enum TokenType {
   Number,
   Identifier,
   Let,
+  Const,
   Equals,
+  Semicolon,
   BinaryOperator,
   OpenParen,
   CloseParen,
@@ -13,6 +15,7 @@ export enum TokenType {
 // Pre-rendered //
 const ReservedKeywords: Record<string, TokenType> = {
   let: TokenType.Let,
+  const: TokenType.Const,
 };
 
 export interface Token {
@@ -45,11 +48,9 @@ function isSkippable(char: string): boolean {
 export function tokenize(sourceCode: string): Token[] {
   const tokens: Token[] = [];
   const source = sourceCode.split("");
-
   let index = 0;
   while (index < source.length) {
     const char = source[index];
-
     switch (char) {
       case "(":
         tokens.push(createToken(char, TokenType.OpenParen));
@@ -67,6 +68,9 @@ export function tokenize(sourceCode: string): Token[] {
       case "=":
         tokens.push(createToken(char, TokenType.Equals));
         break;
+      case ";":
+        tokens.push(createToken(char, TokenType.Semicolon));
+        break;
       default:
         if (isAlphabetic(char)) {
           let alpha = "";
@@ -74,7 +78,7 @@ export function tokenize(sourceCode: string): Token[] {
             alpha += source[index++];
           }
           const reserved = ReservedKeywords[alpha];
-          if (typeof reserved == "number") {
+          if (typeof reserved === "number") {
             tokens.push(createToken(alpha, reserved));
           } else {
             tokens.push(createToken(alpha, TokenType.Identifier));
