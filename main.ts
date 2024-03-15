@@ -8,10 +8,10 @@ repl();
 async function repl() {
   const parser = new Parser();
   const env = new Environment();
-  env.declareVar("x", NEW_NUM(100) as NumberVal);
-  env.declareVar("null", NEW_NULL());
-  env.declareVar("true", NEW_BOOL(true));
-  env.declareVar("false", NEW_BOOL(false));
+  // default global variables //
+  env.declareVar("null", NEW_NULL(), true);
+  env.declareVar("true", NEW_BOOL(true), true);
+  env.declareVar("false", NEW_BOOL(false), true);
   console.log("\nRepl V1");
   while (true) {
     const input = prompt("> ");

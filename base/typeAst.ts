@@ -78,6 +78,12 @@ export interface VarDeclaration extends Statement {
 
 export interface Expression extends Statement {}
 
+export interface AssignmentExpr extends Expression {
+  kind: "AssignmentExpr";
+  assigne: Expression;
+  value: Expression;
+}
+
 export interface BinaryExpr extends Expression {
   kind: "BinaryExpr";
   left: Expression;
