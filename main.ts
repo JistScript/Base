@@ -1,17 +1,25 @@
 import Parser from "./base/parser.ts";
 import Environment from "./runTime/environment.ts";
 import { evaluate } from "./runTime/interpreter.ts";
-import { NumberVal, NEW_NUM, NEW_NULL, NEW_BOOL } from "./runTime/values.ts";
+// repl();
 
-repl();
+// test //
+fire("./tests/test1.txt");
+
+async function fire(filename: string) {
+  const parser = new Parser();
+  const env = new Environment();
+  // Run time //
+  const input = await Deno.readTextFile(filename);
+  const program = parser.proTypeAsst(input);
+  const result = evaluate(program, env);
+  console.log(result);
+}
 
 async function repl() {
   const parser = new Parser();
   const env = new Environment();
-  // default global variables //
-  env.declareVar("null", NEW_NULL(), true);
-  env.declareVar("true", NEW_BOOL(true), true);
-  env.declareVar("false", NEW_BOOL(false), true);
+  // Run time //
   console.log("\nRepl V1");
   while (true) {
     const input = prompt("> ");

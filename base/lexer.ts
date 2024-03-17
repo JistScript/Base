@@ -9,6 +9,10 @@ export enum TokenType {
   BinaryOperator,
   OpenParen,
   CloseParen,
+  OpenBrace,
+  CloseBrace,
+  Comma,
+  Colon,
   EOF,
 }
 
@@ -41,7 +45,7 @@ function isNumeric(char: string): boolean {
 
 // Check if a character is skippable //
 function isSkippable(char: string): boolean {
-  return char === " " || char === "\n" || char === "\t";
+  return char === " " || char === "\n" || char === "\t" || char === "\r";
 }
 
 // Tokenize the source code //
@@ -58,6 +62,12 @@ export function tokenize(sourceCode: string): Token[] {
       case ")":
         tokens.push(createToken(char, TokenType.CloseParen));
         break;
+      case "{":
+        tokens.push(createToken(char, TokenType.OpenBrace));
+        break;
+      case "}":
+        tokens.push(createToken(char, TokenType.CloseBrace));
+        break;
       case "+":
       case "-":
       case "*":
@@ -70,6 +80,12 @@ export function tokenize(sourceCode: string): Token[] {
         break;
       case ";":
         tokens.push(createToken(char, TokenType.Semicolon));
+        break;
+      case ":":
+        tokens.push(createToken(char, TokenType.Colon));
+        break;
+      case ",":
+        tokens.push(createToken(char, TokenType.Comma));
         break;
       default:
         if (isAlphabetic(char)) {

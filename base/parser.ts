@@ -7,6 +7,8 @@ import {
   NumericLiteral,
   VarDeclaration,
   AssignmentExpr,
+  Property,
+  ObjectLiteral,
 } from "./typeAst.ts";
 import { tokenize, Token, TokenType } from "./lexer.ts";
 
@@ -98,14 +100,44 @@ export default class Parser {
     return this.parse_assignment_expr();
   }
 
-  parse_assignment_expr(): Expression {
-    const left = this.parse_add_expr();
+  private parse_assignment_expr(): Expression {
+    const left = this.parse_obj_expr();
     if (this.at().type === TokenType.Equals) {
       this.next();
       const value = this.parse_assignment_expr();
       return { value, assigne: left, kind: "AssignmentExpr" } as AssignmentExpr;
     }
     return left;
+  }
+  private parse_obj_expr(): Expression {
+    if (this.at().type !== TokenType.OpenBrace) {
+      return this.parse_add_expr();
+    }
+    this.next();
+    const properties = new Array<Property>();
+    while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
+      const key = this.expectRender(TokenType.Identifier, "Key expected").value;
+      // key: pair => key //
+      if (this.at().type == TokenType.Comma) {
+        this.next();
+        properties.push({ key, kind: "Property" } as Property);
+        continue;
+      }
+      // key: pair => {key} //
+      else if (this.at().type == TokenType.CloseBrace) {
+        properties.push({ key, kind: "Property" });
+        continue;
+      }
+      // { key: data } //
+      this.expectRender(TokenType.Colon, "Key colon mising in object expression");
+      const value = this.parseExpression();
+      properties.push({ kind: "Property", value, key });
+      if (this.at().type != TokenType.CloseBrace) {
+        this.expectRender(TokenType.Comma, "Key colon is expected");
+      }
+    }
+    this.expectRender(TokenType.CloseBrace, "Closing bracket not rendered");
+    return { kind: "ObjectLiteral", properties } as ObjectLiteral;
   }
 
   // add and sub //
@@ -165,7 +197,7 @@ export default class Parser {
         return value;
       }
       default:
-        console.error("Error token found in parsing", this.at());
+        console.error("Error token found in parsing", this.at());        
         Deno.exit(1);
     }
   }
