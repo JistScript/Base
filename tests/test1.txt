@@ -1,7 +1,9 @@
+let render = 220 - 10;
+
 const data = {
     x : 200,
     y : 10,
-    render ,
+    render : render ,
     complex : {
         self : true,
     }

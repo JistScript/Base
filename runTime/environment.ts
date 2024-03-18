@@ -1,9 +1,11 @@
 import { NEW_BOOL, NEW_NULL, RuntimeVal } from "./values.ts";
 
-function setUpScope(env: Environment) {
+export function createGlobalEnv() {
+  const env = new Environment();
   env.declareVar("null", NEW_NULL(), true);
   env.declareVar("true", NEW_BOOL(true), true);
   env.declareVar("false", NEW_BOOL(false), true);
+  return env;
 }
 
 export default class Environment {
@@ -16,10 +18,6 @@ export default class Environment {
     this.parent = parentENV;
     this.variables = new Map();
     this.constants = new Set();
-
-    if(global){
-      setUpScope(this);
-    }
   }
 
   public declareVar(

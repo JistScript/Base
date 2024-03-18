@@ -1,5 +1,5 @@
 import Parser from "./base/parser.ts";
-import Environment from "./runTime/environment.ts";
+import Environment, { createGlobalEnv } from "./runTime/environment.ts";
 import { evaluate } from "./runTime/interpreter.ts";
 // repl();
 
@@ -8,7 +8,7 @@ fire("./tests/test1.txt");
 
 async function fire(filename: string) {
   const parser = new Parser();
-  const env = new Environment();
+  const env = createGlobalEnv();
   // Run time //
   const input = await Deno.readTextFile(filename);
   const program = parser.proTypeAsst(input);
@@ -18,7 +18,7 @@ async function fire(filename: string) {
 
 async function repl() {
   const parser = new Parser();
-  const env = new Environment();
+  const env = createGlobalEnv();
   // Run time //
   console.log("\nRepl V1");
   while (true) {
