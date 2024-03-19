@@ -9,6 +9,8 @@ import {
   AssignmentExpr,
   Property,
   ObjectLiteral,
+  CallExpr,
+  MemberExpr,
 } from "./typeAst.ts";
 import { tokenize, Token, TokenType } from "./lexer.ts";
 
@@ -115,7 +117,7 @@ export default class Parser {
     }
     this.next();
     const properties = new Array<Property>();
-    while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
+    while (this.notEOF() && this.at().type != TokenType.CloseBrace) {
       const key = this.expectRender(TokenType.Identifier, "Key expected").value;
       // key: pair => key //
       if (this.at().type == TokenType.Comma) {
@@ -129,7 +131,10 @@ export default class Parser {
         continue;
       }
       // { key: data } //
-      this.expectRender(TokenType.Colon, "Key colon mising in object expression");
+      this.expectRender(
+        TokenType.Colon,
+        "Key colon mising in object expression"
+      );
       const value = this.parseExpression();
       properties.push({ kind: "Property", value, key });
       if (this.at().type != TokenType.CloseBrace) {
@@ -158,14 +163,14 @@ export default class Parser {
 
   // multi //
   private parse_multi_expr(): Expression {
-    let left = this.parse_prime_expr();
+    let left = this.parse_call_member_expr();
     while (
       this.at().value == "/" ||
       this.at().value == "*" ||
       this.at().value == "%"
     ) {
       const operator = this.next().value;
-      const right = this.parse_prime_expr();
+      const right = this.parse_call_member_expr();
       left = {
         kind: "BinaryExpr",
         left,
@@ -174,6 +179,72 @@ export default class Parser {
       } as BinaryExpr;
     }
     return left;
+  }
+
+  private parse_call_member_expr(): Expression {
+    const member = this.parse_member_expr();
+    if (this.at().type == TokenType.OpenParen) {
+      return this.parse_call_expr(member);
+    }
+    return member;
+  }
+
+  private parse_call_expr(caller: Expression): Expression {
+    let call_expr: Expression = {
+      kind: "CallExpr",
+      caller,
+      args: this.parse_args(),
+    } as CallExpr;
+    if (this.at().type == TokenType.OpenParen) {
+      call_expr = this.parse_call_expr(call_expr);
+    }
+    return call_expr;
+  }
+
+  private parse_args(): Expression[] {
+    this.expectRender(TokenType.OpenParen, "Required open Parenthesis");
+    const args =
+      this.at().type == TokenType.CloseParen ? [] : this.parse_arguments_list();
+    this.expectRender(TokenType.CloseParen, "Closing Parenthesis Required");
+    return args;
+  }
+
+  private parse_arguments_list(): Expression[] {
+    const args = [this.parse_assignment_expr()];
+    while (this.at().type == TokenType.Comma && this.next()) {
+      args.push(this.parse_assignment_expr());
+    }
+    return args;
+  }
+
+  private parse_member_expr(): Expression {
+    let object = this.parse_prime_expr();
+    while (
+      this.at().type == TokenType.Dot ||
+      this.at().type == TokenType.OpenBracket
+    ) {
+      const operator = this.next();
+      let property: Expression;
+      let computed: boolean;
+
+      // non computed property //
+      if (operator.type == TokenType.Dot) {
+        property = this.parse_prime_expr();
+        computed = false;
+        if (property.kind != "Identifier") {
+          throw `Invalid property dot operator without identifier`;
+        }
+      } else {
+        property = this.parseExpression();
+        computed = true;
+        this.expectRender(
+          TokenType.CloseBracket,
+          "Closing bracket computed property missing"
+        );
+      }
+      object = { kind: "MemberExpr", object, property, computed } as MemberExpr;
+    }
+    return object;
   }
 
   // parser primary //

@@ -1,10 +1,13 @@
-let render = 220 - 10;
+let render = 220 / 10;
 
-const data = {
+const obj = {
     x : 200,
     y : 10,
     render : render ,
     complex : {
-        self : true,
+        bar : true,
     }
 };
+
+let j = obj.complex.bar;
+render = obj.render() + 10;

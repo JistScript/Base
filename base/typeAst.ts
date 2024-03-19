@@ -92,6 +92,19 @@ export interface BinaryExpr extends Expression {
   operator: string;
 }
 
+export interface CallExpr extends Expression {
+  kind: "CallExpr";
+  args: Expression[];
+  caller: Expression;
+}
+
+export interface MemberExpr extends Expression {
+  kind: "MemberExpr";
+  object: Expression;
+  property: Expression;
+  computed: boolean;
+}
+
 export interface Identifier extends Expression {
   kind: "Identifier";
   symbol: string;

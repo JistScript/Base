@@ -11,8 +11,11 @@ export enum TokenType {
   CloseParen,
   OpenBrace,
   CloseBrace,
+  OpenBracket,
+  CloseBracket,
   Comma,
   Colon,
+  Dot,
   EOF,
 }
 
@@ -68,6 +71,12 @@ export function tokenize(sourceCode: string): Token[] {
       case "}":
         tokens.push(createToken(char, TokenType.CloseBrace));
         break;
+      case "[":
+        tokens.push(createToken(char, TokenType.OpenBracket));
+        break;
+      case "]":
+        tokens.push(createToken(char, TokenType.CloseBracket));
+        break;
       case "+":
       case "-":
       case "*":
@@ -86,6 +95,9 @@ export function tokenize(sourceCode: string): Token[] {
         break;
       case ",":
         tokens.push(createToken(char, TokenType.Comma));
+        break;
+      case ".":
+        tokens.push(createToken(char, TokenType.Dot));
         break;
       default:
         if (isAlphabetic(char)) {
