@@ -131,3 +131,8 @@ export interface ObjectLiteral extends Expression {
   kind: "ObjectLiteral";
   properties: Property[];
 }
+
+export interface StringLiteral extends Expression {
+  kind: "StringLiteral";
+  value: string;
+}

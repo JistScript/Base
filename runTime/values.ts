@@ -6,10 +6,19 @@ export type ValueTypes =
   | "boolean"
   | "object"
   | "native-fn"
-  | "function";
+  | "function"
+  | "string";
 
 export interface RuntimeVal {
   type: ValueTypes;
+}
+
+export class StringValue implements RuntimeVal {
+  type: "string" = "string";
+  value: string;
+  constructor(value: string) {
+    this.value = value;
+  }
 }
 
 export interface NullVal extends RuntimeVal {

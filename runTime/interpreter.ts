@@ -1,4 +1,4 @@
-import { RuntimeVal, NumberVal } from "./values.ts";
+import { RuntimeVal, NumberVal, StringValue } from "./values.ts";
 import {
   BinaryExpr,
   NumericLiteral,
@@ -10,6 +10,7 @@ import {
   ObjectLiteral,
   CallExpr,
   FunctionDeclaration,
+  StringLiteral,
 } from "../base/typeAst.ts";
 import Environment from "./environment.ts";
 import {
@@ -46,7 +47,12 @@ export function evaluate(astNode: Statement, env: Environment): RuntimeVal {
       return eval_program_expr(astNode as Program, env);
     case "VarDeclaration":
       return eval_var_declaration(astNode as VarDeclaration, env);
-      case "FunctionDeclaration":
+    case "StringLiteral":
+      return {
+        value: (astNode as StringLiteral).value,
+        type: "string",
+      } as StringValue;
+    case "FunctionDeclaration":
       return eval_function_declaration(astNode as FunctionDeclaration, env);
     default:
       console.error(

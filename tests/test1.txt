@@ -4,3 +4,6 @@ function test(x, y) {
 
 const result = test(10, 10);
 mark(result)
+
+let name = "Test case 1";
+mark(name)

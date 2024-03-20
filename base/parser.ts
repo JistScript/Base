@@ -12,6 +12,7 @@ import {
   ObjectLiteral,
   CallExpr,
   MemberExpr,
+  StringLiteral,
 } from "./typeAst.ts";
 import { tokenize, Token, TokenType } from "./lexer.ts";
 
@@ -300,6 +301,8 @@ export default class Parser {
           kind: "NumericLiteral",
           value: parseFloat(this.next().value),
         } as NumericLiteral;
+      case TokenType.StringLiteral:
+        return { kind: "StringLiteral", value: this.next().value } as StringLiteral;
       case TokenType.OpenParen: {
         this.next();
         const value = this.parseExpression();

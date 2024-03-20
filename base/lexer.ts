@@ -16,6 +16,7 @@ export enum TokenType {
   Comma,
   Colon,
   Dot,
+  StringLiteral,
   EOF,
 }
 
@@ -95,6 +96,15 @@ export function tokenize(sourceCode: string): Token[] {
       case ".":
         tokens.push(createToken(char, TokenType.Dot));
         break;
+      case '"': {
+        let stringValue = "";
+        while (src.length > 0 && src[0] !== '"') {
+          stringValue += src.shift()!;
+        }
+        src.shift();
+        tokens.push(createToken(stringValue, TokenType.StringLiteral));
+        break;
+      }
       default:
         if (isInt(char)) {
           let num = char;
