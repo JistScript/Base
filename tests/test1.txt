@@ -10,4 +10,4 @@ const obj = {
 };
 
 let j = obj.complex.bar;
-render = obj.render() + 10;
+render = obj.render() + 10

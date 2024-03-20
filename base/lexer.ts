@@ -1,4 +1,3 @@
-// Types of token //
 export enum TokenType {
   Number,
   Identifier,
@@ -19,7 +18,6 @@ export enum TokenType {
   EOF,
 }
 
-// Pre-rendered //
 const ReservedKeywords: Record<string, TokenType> = {
   let: TokenType.Let,
   const: TokenType.Const,
@@ -30,34 +28,30 @@ export interface Token {
   type: TokenType;
 }
 
-// Token creation function //
 function createToken(value: string, type: TokenType): Token {
   return { value, type };
 }
 
-// Check if a character is alphabetic //
 function isAlphabetic(char: string): boolean {
-  return char.toUpperCase() !== char.toLowerCase();
+  const code = char.charCodeAt(0);
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
 }
 
-// Check if a character is numeric //
-function isNumeric(char: string): boolean {
-  const charCode = char.charCodeAt(0);
-  return charCode >= "0".charCodeAt(0) && charCode <= "9".charCodeAt(0);
-}
-
-// Check if a character is skippable //
 function isSkippable(char: string): boolean {
-  return char === " " || char === "\n" || char === "\t" || char === "\r";
+  return /\s/.test(char);
 }
 
-// Tokenize the source code //
+function isInt(char: string): boolean {
+  return /^[0-9]+$/.test(char);
+}
+
 export function tokenize(sourceCode: string): Token[] {
   const tokens: Token[] = [];
-  const source = sourceCode.split("");
-  let index = 0;
-  while (index < source.length) {
-    const char = source[index];
+  const src: string[] = sourceCode.split("");
+
+  while (src.length > 0) {
+    const char = src.shift()!;
+
     switch (char) {
       case "(":
         tokens.push(createToken(char, TokenType.OpenParen));
@@ -100,34 +94,36 @@ export function tokenize(sourceCode: string): Token[] {
         tokens.push(createToken(char, TokenType.Dot));
         break;
       default:
-        if (isAlphabetic(char)) {
-          let alpha = "";
-          while (index < source.length && isAlphabetic(source[index])) {
-            alpha += source[index++];
-          }
-          const reserved = ReservedKeywords[alpha];
-          if (typeof reserved === "number") {
-            tokens.push(createToken(alpha, reserved));
-          } else {
-            tokens.push(createToken(alpha, TokenType.Identifier));
-          }
-        } else if (isNumeric(char)) {
-          let num = "";
-          while (index < source.length && isNumeric(source[index])) {
-            num += source[index++];
+        if (isInt(char)) {
+          let num = char;
+          while (src.length > 0 && isInt(src[0])) {
+            num += src.shift()!;
           }
           tokens.push(createToken(num, TokenType.Number));
-          continue;
+        } else if (isAlphabetic(char)) {
+          let ident = char;
+          while (src.length > 0 && isAlphabetic(src[0])) {
+            ident += src.shift()!;
+          }
+          const reserved = ReservedKeywords[ident];
+          if (reserved !== undefined) {
+            tokens.push(createToken(ident, reserved));
+          } else {
+            tokens.push(createToken(ident, TokenType.Identifier));
+          }
         } else if (isSkippable(char)) {
-          index++;
           continue;
         } else {
-          console.log("Unrecognized character detected.", char[0]);
+          console.error(
+            "Unrecognized character found in source:",
+            char.charCodeAt(0),
+            char
+          );
           Deno.exit(1);
         }
     }
-    index++;
   }
+
   tokens.push({ type: TokenType.EOF, value: "EndOfFile" });
   return tokens;
 }

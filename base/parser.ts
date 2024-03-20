@@ -112,7 +112,7 @@ export default class Parser {
     return left;
   }
   private parse_obj_expr(): Expression {
-    if (this.at().type !== TokenType.OpenBrace) {
+    if (this.at().type != TokenType.OpenBrace) {
       return this.parse_add_expr();
     }
     this.next();
