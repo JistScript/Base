@@ -13,7 +13,7 @@ async function fire(filename: string) {
   const input = await Deno.readTextFile(filename);
   const program = parser.proTypeAsst(input);
   const result = evaluate(program, env);
-  console.log(result);
+  // console.log(result);
 }
 
 async function repl() {

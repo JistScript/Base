@@ -1,4 +1,5 @@
-export type ValueTypes = "null" | "number" | "boolean" | "object";
+import Environment from "./environment.ts";
+export type ValueTypes = "null" | "number" | "boolean" | "object" | "native-fn";
 
 export interface RuntimeVal {
   type: ValueTypes;
@@ -22,6 +23,16 @@ export interface BooleanVal extends RuntimeVal {
 export interface ObjectVal extends RuntimeVal {
   type: "object";
   properties: Map<string, RuntimeVal>;
+}
+
+export type FunctionCall = (args: RuntimeVal[], env: Environment) => RuntimeVal;
+export interface NativeFnVal extends RuntimeVal {
+  type: "native-fn";
+  call: FunctionCall;
+}
+
+export function NATIVE_FN(call: FunctionCall) {
+  return { type: "native-fn", call } as NativeFnVal;
 }
 
 export function NEW_NUM(n = 0) {

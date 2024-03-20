@@ -1,10 +1,21 @@
-import { NEW_BOOL, NEW_NULL, RuntimeVal } from "./values.ts";
+import { NATIVE_FN, NEW_BOOL, NEW_NULL, RuntimeVal } from "./values.ts";
 
 export function createGlobalEnv() {
   const env = new Environment();
   env.declareVar("null", NEW_NULL(), true);
   env.declareVar("true", NEW_BOOL(true), true);
   env.declareVar("false", NEW_BOOL(false), true);
+
+  // native methods //
+  env.declareVar(
+    "mark",
+    NATIVE_FN((args, scope) => {
+      console.log(...args);
+      return NEW_NULL();
+    }),
+    true
+  );
+
   return env;
 }
 

@@ -1,13 +1,1 @@
-let render = 220 / 10;
-
-const obj = {
-    x : 200,
-    y : 10,
-    render : render ,
-    complex : {
-        bar : true,
-    }
-};
-
-let j = obj.complex.bar;
-render = obj.render() + 10
+mark(2 + 9)
