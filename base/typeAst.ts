@@ -77,6 +77,13 @@ export interface VarDeclaration extends Statement {
   value?: Expression;
 }
 
+export interface FunctionDeclaration extends Statement {
+  kind: "FunctionDeclaration";
+  parameters: string[];
+  name: string;
+  body: Statement[];
+}
+
 export interface Expression extends Statement {}
 
 export interface AssignmentExpr extends Expression {

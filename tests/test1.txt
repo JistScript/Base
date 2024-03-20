@@ -1,1 +1,6 @@
-mark(2 + 9)
+function test(x, y) {
+  let result = x + y;
+}
+
+const result = test(10, 10);
+mark(result)

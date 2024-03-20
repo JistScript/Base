@@ -1,5 +1,9 @@
-import { RuntimeVal, NEW_NULL } from "./../values.ts";
-import { Program, VarDeclaration } from "../../base/typeAst.ts";
+import { RuntimeVal, NEW_NULL, FunctionVal } from "./../values.ts";
+import {
+  FunctionDeclaration,
+  Program,
+  VarDeclaration,
+} from "../../base/typeAst.ts";
 import Environment from "./../environment.ts";
 import { evaluate } from "../interpreter.ts";
 
@@ -22,4 +26,18 @@ export function eval_var_declaration(
     ? evaluate(declaration.value, env)
     : NEW_NULL();
   return env.declareVar(declaration.identifier, value, declaration.constant);
+}
+
+export function eval_function_declaration(
+  declaration: FunctionDeclaration,
+  env: Environment
+): RuntimeVal {
+  const fn = {
+    type: "function",
+    name: declaration.name,
+    parameters: declaration.parameters,
+    declarationEnv: env,
+    body: declaration.body,
+  } as FunctionVal;
+  return env.declareVar(declaration.name, fn, true);
 }

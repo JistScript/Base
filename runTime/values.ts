@@ -1,5 +1,12 @@
 import Environment from "./environment.ts";
-export type ValueTypes = "null" | "number" | "boolean" | "object" | "native-fn";
+import { Statement } from "../base/typeAst.ts";
+export type ValueTypes =
+  | "null"
+  | "number"
+  | "boolean"
+  | "object"
+  | "native-fn"
+  | "function";
 
 export interface RuntimeVal {
   type: ValueTypes;
@@ -33,6 +40,14 @@ export interface NativeFnVal extends RuntimeVal {
 
 export function NATIVE_FN(call: FunctionCall) {
   return { type: "native-fn", call } as NativeFnVal;
+}
+
+export interface FunctionVal extends RuntimeVal {
+  type: "function";
+  name: string;
+  parameters: string[];
+  declarationEnv: Environment;
+  body: Statement[];
 }
 
 export function NEW_NUM(n = 0) {

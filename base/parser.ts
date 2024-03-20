@@ -6,6 +6,7 @@ import {
   Identifier,
   NumericLiteral,
   VarDeclaration,
+  FunctionDeclaration,
   AssignmentExpr,
   Property,
   ObjectLiteral,
@@ -59,9 +60,50 @@ export default class Parser {
       case TokenType.Let:
       case TokenType.Const:
         return this.parse_var_declaration();
+      case TokenType.Function:
+        return this.parse_function_declaration();
       default:
         return this.parseExpression();
     }
+  }
+
+  parse_function_declaration(): Statement {
+    this.next();
+    const name = this.expectRender(
+      TokenType.Identifier,
+      "Name is required for all function"
+    ).value;
+    const args = this.parse_args();
+    const params: string[] = [];
+    for (const arg of args) {
+      if (arg.kind != "Identifier") {
+        console.log(arg);
+        throw "Expected declaration inside function to be a string";
+      }
+      params.push((arg as Identifier).symbol);
+    }
+    this.expectRender(
+      TokenType.OpenBrace,
+      "Function expected a body declaration"
+    );
+    const body: Statement[] = [];
+    while (
+      this.at().type != TokenType.EOF &&
+      this.at().type != TokenType.CloseBrace
+    ) {
+      body.push(this.parseStatement());
+    }
+    this.expectRender(
+      TokenType.CloseBrace,
+      "Required a closing brace for a function declaration"
+    );
+    const fn = {
+      kind: "FunctionDeclaration",
+      parameters: params,
+      body,
+      name,
+    } as FunctionDeclaration;
+    return fn;
   }
 
   parse_var_declaration(): Statement {
@@ -268,7 +310,7 @@ export default class Parser {
         return value;
       }
       default:
-        console.error("Error token found in parsing", this.at());        
+        console.error("Error token found in parsing", this.at());
         Deno.exit(1);
     }
   }

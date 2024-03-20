@@ -9,6 +9,7 @@ import {
   AssignmentExpr,
   ObjectLiteral,
   CallExpr,
+  FunctionDeclaration,
 } from "../base/typeAst.ts";
 import Environment from "./environment.ts";
 import {
@@ -21,6 +22,7 @@ import {
 import {
   eval_program_expr,
   eval_var_declaration,
+  eval_function_declaration,
 } from "./eval/evalStatements.ts";
 
 export function evaluate(astNode: Statement, env: Environment): RuntimeVal {
@@ -44,6 +46,8 @@ export function evaluate(astNode: Statement, env: Environment): RuntimeVal {
       return eval_program_expr(astNode as Program, env);
     case "VarDeclaration":
       return eval_var_declaration(astNode as VarDeclaration, env);
+      case "FunctionDeclaration":
+      return eval_function_declaration(astNode as FunctionDeclaration, env);
     default:
       console.error(
         "Ast Node has not yet been set up for interpretation",

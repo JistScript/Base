@@ -8,6 +8,7 @@ import {
 import Environment from "../environment.ts";
 import { evaluate } from "../interpreter.ts";
 import {
+  FunctionVal,
   NEW_NULL,
   NativeFnVal,
   NumberVal,
@@ -85,9 +86,24 @@ export function eval_object_expr(
 export function eval_call_expr(expr: CallExpr, env: Environment): RuntimeVal {
   const args = expr.args.map((arg) => evaluate(arg, env));
   const fn = evaluate(expr.caller, env);
-  if (fn.type != "native-fn") {
-    throw "Value that is not a function can't be rendered" + JSON.stringify(fn);
+  if (fn.type == "native-fn") {
+    const result = (fn as NativeFnVal).call(args, env);
+    return result;
   }
-  const result = (fn as NativeFnVal).call(args, env);
-  return result;
+  if (fn.type == "function") {
+    const funct = fn as FunctionVal;
+    const scope = new Environment(funct.declarationEnv);
+    // variable for parameter //
+    for (let i = 0; i < funct.parameters.length; i++) {
+      //! verify function arity //
+      const varname = funct.parameters[i];
+      scope.declareVar(varname, args[i], false);
+    }
+    let result: RuntimeVal = NEW_NULL();
+    for (const stmt of funct.body) {
+      result = evaluate(stmt, scope);
+    }
+    return result;
+  }
+  throw "Value that is not a function can't be rendered" + JSON.stringify(fn);
 }

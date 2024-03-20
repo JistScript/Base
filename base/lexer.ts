@@ -3,6 +3,7 @@ export enum TokenType {
   Identifier,
   Let,
   Const,
+  Function,
   Equals,
   Semicolon,
   BinaryOperator,
@@ -21,6 +22,7 @@ export enum TokenType {
 const ReservedKeywords: Record<string, TokenType> = {
   let: TokenType.Let,
   const: TokenType.Const,
+  function: TokenType.Function,
 };
 
 export interface Token {

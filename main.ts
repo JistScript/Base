@@ -1,5 +1,5 @@
 import Parser from "./base/parser.ts";
-import Environment, { createGlobalEnv } from "./runTime/environment.ts";
+import { createGlobalEnv } from "./runTime/environment.ts";
 import { evaluate } from "./runTime/interpreter.ts";
 // repl();
 
