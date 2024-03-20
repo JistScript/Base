@@ -16,18 +16,18 @@ async function fire(filename: string) {
   // console.log(result);
 }
 
-async function repl() {
-  const parser = new Parser();
-  const env = createGlobalEnv();
-  // Run time //
-  console.log("\nRepl V1");
-  while (true) {
-    const input = prompt("> ");
-    if (!input || input.includes("exist")) {
-      Deno.exit(1);
-    }
-    const program = parser.proTypeAsst(input);
-    const results = evaluate(program, env);
-    console.log(results);
-  }
-}
+// async function repl() {
+//   const parser = new Parser();
+//   const env = createGlobalEnv();
+// Run time //
+// console.log("\nRepl V1");
+// while (true) {
+//   const input = prompt("> ");
+//   if (!input || input.includes("exist")) {
+//     Deno.exit(1);
+//   }
+//     const program = parser.proTypeAsst(input);
+//     const results = evaluate(program, env);
+//     console.log(results);
+//   }
+// }
