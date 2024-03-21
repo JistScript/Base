@@ -136,3 +136,8 @@ export interface StringLiteral extends Expression {
   kind: "StringLiteral";
   value: string;
 }
+
+export interface ArrayLiteral {
+  kind: "ArrayLiteral";
+  elements: Expression[];
+}

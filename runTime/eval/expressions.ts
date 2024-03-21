@@ -1,4 +1,5 @@
 import {
+  ArrayLiteral,
   AssignmentExpr,
   BinaryExpr,
   CallExpr,
@@ -14,7 +15,16 @@ import {
   NumberVal,
   ObjectVal,
   RuntimeVal,
+  ArrayVal,
 } from "../values.ts";
+
+export function eval_array_literal(
+  astNode: ArrayLiteral,
+  env: Environment
+): ArrayVal {
+  const elements = astNode.elements.map((element) => evaluate(element, env));
+  return { type: "array", elements };
+}
 
 function eval_numeric_binary_expr(
   leftHandSide: NumberVal,

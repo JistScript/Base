@@ -13,6 +13,7 @@ import {
   CallExpr,
   MemberExpr,
   StringLiteral,
+  ArrayLiteral,
 } from "./typeAst.ts";
 import { tokenize, Token, TokenType } from "./lexer.ts";
 
@@ -302,7 +303,10 @@ export default class Parser {
           value: parseFloat(this.next().value),
         } as NumericLiteral;
       case TokenType.StringLiteral:
-        return { kind: "StringLiteral", value: this.next().value } as StringLiteral;
+        return {
+          kind: "StringLiteral",
+          value: this.next().value,
+        } as StringLiteral;
       case TokenType.OpenParen: {
         this.next();
         const value = this.parseExpression();
@@ -311,6 +315,23 @@ export default class Parser {
           "Unexpected token found inside expression, Expecting closing parenthesis"
         );
         return value;
+      }
+      case TokenType.OpenBracket: {
+        this.next();
+        const elements: Expression[] = [];
+        while (this.at().type !== TokenType.CloseBracket) {
+          elements.push(this.parseExpression());
+          if (this.at().type === TokenType.Comma) {
+            this.next();
+          } else if (this.at().type !== TokenType.CloseBracket) {
+            throw "Expected comma or closing bracket in array literal";
+          }
+        }
+        this.expectRender(
+          TokenType.CloseBracket,
+          "Expected closing bracket for array literal"
+        );
+        return { kind: "ArrayLiteral", elements } as ArrayLiteral;
       }
       default:
         console.error("Error token found in parsing", this.at());

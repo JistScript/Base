@@ -7,7 +7,8 @@ export type ValueTypes =
   | "object"
   | "native-fn"
   | "function"
-  | "string";
+  | "string"
+  | "array";
 
 export interface RuntimeVal {
   type: ValueTypes;
@@ -19,6 +20,10 @@ export class StringValue implements RuntimeVal {
   constructor(value: string) {
     this.value = value;
   }
+}
+export interface ArrayVal extends RuntimeVal {
+  type: "array";
+  elements: RuntimeVal[];
 }
 
 export interface NullVal extends RuntimeVal {
@@ -47,16 +52,16 @@ export interface NativeFnVal extends RuntimeVal {
   call: FunctionCall;
 }
 
-export function NATIVE_FN(call: FunctionCall) {
-  return { type: "native-fn", call } as NativeFnVal;
-}
-
 export interface FunctionVal extends RuntimeVal {
   type: "function";
   name: string;
   parameters: string[];
   declarationEnv: Environment;
   body: Statement[];
+}
+
+export function NATIVE_FN(call: FunctionCall) {
+  return { type: "native-fn", call } as NativeFnVal;
 }
 
 export function NEW_NUM(n = 0) {

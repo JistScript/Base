@@ -11,6 +11,7 @@ import {
   CallExpr,
   FunctionDeclaration,
   StringLiteral,
+  ArrayLiteral,
 } from "../base/typeAst.ts";
 import Environment from "./environment.ts";
 import {
@@ -19,6 +20,7 @@ import {
   eval_binary_expr,
   eval_object_expr,
   eval_call_expr,
+  eval_array_literal,
 } from "./eval/expressions.ts";
 import {
   eval_program_expr,
@@ -41,6 +43,8 @@ export function evaluate(astNode: Statement, env: Environment): RuntimeVal {
       return eval_Identifier(astNode as Identifier, env);
     case "ObjectLiteral":
       return eval_object_expr(astNode as ObjectLiteral, env);
+    case "ArrayLiteral":
+      return eval_array_literal(astNode as ArrayLiteral, env);
     case "CallExpr":
       return eval_call_expr(astNode as CallExpr, env);
     case "Program":
