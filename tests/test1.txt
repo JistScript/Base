@@ -1,6 +1,17 @@
 function test(x, y) {
   let result = x + y;
 }
-
 const result = test(10, 10);
 mark(result, "TestCase")
+
+const n = {
+  TestCase:"test1",
+  Number:10,
+  Array: [1, 2, "Three"],
+  Boolean: true,
+  Null: null,
+  Undefined: undefined,
+  Object: {
+    simple: false
+  }
+};

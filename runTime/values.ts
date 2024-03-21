@@ -8,7 +8,8 @@ export type ValueTypes =
   | "native-fn"
   | "function"
   | "string"
-  | "array";
+  | "array"
+  | "undefined";
 
 export interface RuntimeVal {
   type: ValueTypes;
@@ -74,4 +75,8 @@ export function NEW_NULL() {
 
 export function NEW_BOOL(b = true) {
   return { type: "boolean", value: b } as BooleanVal;
+}
+
+export function NEW_UNDEFINED() {
+  return { type: "undefined" } as RuntimeVal;
 }
