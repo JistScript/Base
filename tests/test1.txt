@@ -4,7 +4,7 @@ function test(x, y) {
 const result = test(10, 10);
 mark(result, "TestCase")
 
-const n = {
+const testCase = {
   TestCase:"test1",
   Number:10,
   Array: [1, 2, "Three"],
@@ -15,3 +15,6 @@ const n = {
     simple: false
   }
 };
+
+const runTest = {};
+mark(n, "TestCase")
