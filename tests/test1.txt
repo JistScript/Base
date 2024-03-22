@@ -17,4 +17,4 @@ const testCase = {
 };
 
 const runTest = {};
-mark(n, "TestCase")
+mark(runTest, "TestCase")
