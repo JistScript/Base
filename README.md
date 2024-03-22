@@ -52,7 +52,6 @@ mark(testCase, "TestCase")
     }
   }
 } { value: "TestCase", type: "string" }
-{ type: "null", value: null }
 >
 ```
 
@@ -66,7 +65,6 @@ Mark:1
 const result = test(10, 10);
 mark(result, "TestCase")
 { value: 20, type: "number" } { value: "TestCase", type: "string" }
-{ type: "null", value: null }
 >
 ```
 

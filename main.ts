@@ -16,6 +16,5 @@ async function repl() {
     }
     const program = parser.proTypeAsst(input);
     const results = evaluate(program, env);
-    console.log(results);
   }
 }
