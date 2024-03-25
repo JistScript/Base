@@ -88,7 +88,7 @@ Clone the project
 To start the server:
 
 ```bash
-  deno run -A main.t
+  deno run -A main.ts
 ```
 
 To log input Run:
