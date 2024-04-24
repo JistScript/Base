@@ -141,3 +141,272 @@ export interface ArrayLiteral {
   kind: "ArrayLiteral";
   elements: Expression[];
 }
+
+export interface UnaryExpr extends Expression {
+  kind: "UnaryExpr";
+  operator: string;
+  argument: Expression;
+}
+
+export interface BooleanLiteral extends Expression {
+  kind: "BooleanLiteral";
+  value: boolean;
+}
+
+export interface ArrayExpression extends Expression {
+  kind: "ArrayExpression";
+  elements: Expression[];
+}
+
+export interface LogicalExpr extends Expression {
+  kind: "LogicalExpr";
+  left: Expression;
+  right: Expression;
+  operator: string;
+}
+
+export interface ConditionalExpr extends Expression {
+  kind: "ConditionalExpr";
+  test: Expression;
+  consequent: Expression;
+  alternate: Expression;
+}
+
+export interface ArrowFunctionExpression extends Expression {
+  kind: "ArrowFunctionExpression";
+  parameters: string[];
+  body: Statement[];
+}
+
+export interface ClassDeclaration extends Statement {
+  kind: "ClassDeclaration";
+  name: string;
+  superClass?: Expression;
+  body: Statement[];
+}
+
+export interface IfStatement extends Statement {
+  kind: "IfStatement";
+  test: Expression;
+  consequent: Statement[];
+  alternate?: Statement[] | IfStatement;
+}
+
+export interface ForStatement extends Statement {
+  kind: "ForStatement";
+  init?: VarDeclaration | AssignmentExpr | Expression;
+  test?: Expression;
+  update?: AssignmentExpr;
+  body: Statement[];
+}
+
+export interface WhileStatement extends Statement {
+  kind: "WhileStatement";
+  test: Expression;
+  body: Statement[];
+}
+
+export interface SwitchStatement extends Statement {
+  kind: "SwitchStatement";
+  discriminant: Expression;
+  cases: SwitchCase[];
+}
+
+export interface SwitchCase {
+  kind: "SwitchCase";
+  test?: Expression;
+  consequent: Statement[];
+}
+
+export interface BreakStatement extends Statement {
+  kind: "BreakStatement";
+}
+
+export interface ContinueStatement extends Statement {
+  kind: "ContinueStatement";
+}
+
+export interface ReturnStatement extends Statement {
+  kind: "ReturnStatement";
+  argument?: Expression;
+}
+
+export interface ThrowStatement extends Statement {
+  kind: "ThrowStatement";
+  argument: Expression;
+}
+
+export interface TryStatement extends Statement {
+  kind: "TryStatement";
+  block: Statement[];
+  handler?: CatchClause;
+  finalizer?: Statement[];
+}
+
+export interface CatchClause {
+  kind: "CatchClause";
+  param: Identifier;
+  body: Statement[];
+}
+
+export interface BlockStatement extends Statement {
+  kind: "BlockStatement";
+  body: Statement[];
+}
+
+export interface ExpressionStatement extends Statement {
+  kind: "ExpressionStatement";
+  expression: Expression;
+}
+
+export interface EmptyStatement extends Statement {
+  kind: "EmptyStatement";
+}
+
+export interface DebuggerStatement extends Statement {
+  kind: "DebuggerStatement";
+}
+
+export interface ThisExpression extends Expression {
+  kind: "ThisExpression";
+}
+
+export interface SuperExpression extends Expression {
+  kind: "SuperExpression";
+}
+
+export interface NewExpression extends Expression {
+  kind: "NewExpression";
+  callee: Expression;
+  arguments: Expression[];
+}
+
+export interface FunctionExpression extends Expression {
+  kind: "FunctionExpression";
+  parameters: string[];
+  body: Statement[];
+}
+
+export interface AwaitExpression extends Expression {
+  kind: "AwaitExpression";
+  argument: Expression;
+}
+
+export interface YieldExpression extends Expression {
+  kind: "YieldExpression";
+  argument?: Expression;
+}
+
+export interface TemplateLiteral extends Expression {
+  kind: "TemplateLiteral";
+  quasis: TemplateElement[];
+  expressions: Expression[];
+}
+
+export interface TaggedTemplateExpression extends Expression {
+  kind: "TaggedTemplateExpression";
+  tag: Expression;
+  quasi: TemplateLiteral;
+}
+
+export interface TemplateElement {
+  kind: "TemplateElement";
+  value: {
+    raw: string;
+    cooked: string;
+  };
+  tail: boolean;
+}
+
+export interface ImportDeclaration extends Statement {
+  kind: "ImportDeclaration";
+  specifiers:
+    | ImportSpecifier[]
+    | ImportDefaultSpecifier[]
+    | ImportNamespaceSpecifier[];
+  source: StringLiteral;
+}
+
+export interface ExportDeclaration extends Statement {
+  kind: "ExportDeclaration";
+  declaration: Statement | null;
+  specifiers:
+    | ExportSpecifier[]
+    | ExportNamespaceSpecifier[]
+    | ExportDefaultSpecifier[];
+  source?: StringLiteral;
+}
+
+export interface ImportSpecifier {
+  kind: "ImportSpecifier";
+  local: Identifier;
+  imported: Identifier;
+}
+
+export interface ExportSpecifier {
+  kind: "ExportSpecifier";
+  local: Identifier;
+  exported: Identifier;
+}
+
+export interface ImportDefaultSpecifier {
+  kind: "ImportDefaultSpecifier";
+  local: Identifier;
+}
+
+export interface ExportDefaultSpecifier {
+  kind: "ExportDefaultSpecifier";
+  exported: Identifier;
+}
+
+export interface ImportNamespaceSpecifier {
+  kind: "ImportNamespaceSpecifier";
+  local: Identifier;
+}
+
+export interface ExportNamespaceSpecifier {
+  kind: "ExportNamespaceSpecifier";
+  exported: Identifier;
+}
+
+export interface ImportExpression extends Expression {
+  kind: "ImportExpression";
+  source: Expression;
+}
+
+export interface MetaProperty extends Expression {
+  kind: "MetaProperty";
+  meta: Identifier;
+  property: Identifier;
+}
+
+export interface Directive extends Expression {
+  kind: "Directive";
+  value: DirectiveLiteral;
+}
+
+export interface DirectiveLiteral extends Expression {
+  kind: "DirectiveLiteral";
+  value: string;
+}
+
+export interface BigIntLiteral extends Expression {
+  kind: "BigIntLiteral";
+  value: bigint;
+}
+
+export interface BigIntLiteralTypeAnnotation extends Expression {
+  kind: "BigIntLiteralTypeAnnotation";
+  value: bigint;
+}
+
+export interface BigIntLiteralTypeAnnotationTypeAnnotation extends Expression {
+  kind: "BigIntLiteralTypeAnnotationTypeAnnotation";
+  value: bigint;
+}
+
+export interface BigIntLiteralTypeAnnotationTypeAnnotationTypeAnnotation
+  extends Expression {
+  kind: "BigIntLiteralTypeAnnotationTypeAnnotationTypeAnnotation";
+  value: bigint;
+}
