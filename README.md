@@ -1,4 +1,4 @@
-# JistScript (Base Mark Model: 1)
+# JistScript (Base Mark Model: 0)
 
 This repository contains script implemented in TypeScript for a simple data type language. The parser is designed to tokenize input source code, parse it into an abstract syntax tree (AST), and provide functionalities to traverse and manipulate the AST.
 These components include functionalities for environment creation, value handling, and runtime operations.
