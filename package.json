@@ -59,7 +59,8 @@
   "author": "Joel Deon Dsouza",
   "repository": {
     "type": "git",
-    "url": "https://github.com/JistScript/Base.git"
+    "url": "https://github.com/JistScript/Base.git",
+    "license": "MIT"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
