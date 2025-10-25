@@ -16,6 +16,7 @@ export function jistscript(): Plugin {
         const jsCode = transpileToJS(ast, {
           target: "esnext",
           module: "esm",
+          injectRuntime: true,
         });
         return {
           code: jsCode,

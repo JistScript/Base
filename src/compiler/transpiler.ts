@@ -17,14 +17,23 @@ interface TranspileOptions {
   module?: "commonjs" | "esm";
   jsx?: "react" | "react-jsx" | "preserve";
   sourcemap?: boolean;
+  injectRuntime?: boolean;
 }
 
-export function transpileToJS(
-  ast: Program,
-  options: TranspileOptions = {}
-): string {
+export function transpileToJS(ast: Program, options: TranspileOptions = {}): string {
   const ctx = new TranspileContext(options);
-  return transpileProgram(ast, ctx);
+  const programCode = transpileProgram(ast, ctx);
+  // Mark function runtime  //
+  const runtime =
+    options.injectRuntime !== false
+      ? `// JistScript Runtime
+const mark = typeof window !== 'undefined' && window.console
+  ? (...args) => console.log('[JistScript]', ...args)
+  : (...args) => console.log('[JistScript]', ...args);
+`
+      : "";
+
+  return runtime + programCode;
 }
 
 class TranspileContext {
@@ -41,7 +50,7 @@ class TranspileContext {
 }
 
 function transpileProgram(program: Program, ctx: TranspileContext): string {
-  const statements = program.body.map((stmt) => transpileStatement(stmt, ctx));
+  const statements = program.body.map(stmt => transpileStatement(stmt, ctx));
   return statements.join("\n");
 }
 
@@ -52,9 +61,7 @@ function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
     case "VarDeclaration": {
       const decl = stmt as VarDeclaration;
       const keyword = decl.constant ? "const" : "let";
-      const value = decl.value
-        ? transpileExpression(decl.value, ctx)
-        : "undefined";
+      const value = decl.value ? transpileExpression(decl.value, ctx) : "undefined";
       return `${indent}${keyword} ${decl.identifier} = ${value};`;
     }
 
@@ -62,7 +69,7 @@ function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
       const fn = stmt as FunctionDeclaration;
       const params = fn.parameters.join(", ");
       ctx.indent++;
-      const body = fn.body.map((s) => transpileStatement(s, ctx)).join("\n");
+      const body = fn.body.map(s => transpileStatement(s, ctx)).join("\n");
       ctx.indent--;
       return `${indent}function ${fn.name}(${params}) {\n${body}\n${indent}}`;
     }
@@ -111,9 +118,7 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
     case "CallExpr": {
       const call = expr as CallExpr;
       const caller = transpileExpression(call.caller, ctx);
-      const args = call.args
-        .map((arg) => transpileExpression(arg, ctx))
-        .join(", ");
+      const args = call.args.map(arg => transpileExpression(arg, ctx)).join(", ");
       return `${caller}(${args})`;
     }
 
@@ -127,7 +132,7 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
     case "ObjectLiteral": {
       const obj = expr as ObjectLiteral;
       const props = obj.properties
-        .map((p) => {
+        .map(p => {
           if (p.value) {
             const val = transpileExpression(p.value, ctx);
             return `${p.key}: ${val}`;
@@ -140,9 +145,7 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
 
     case "ArrayLiteral": {
       const arr = expr as ArrayLiteral;
-      const elements = arr.elements
-        .map((el) => transpileExpression(el, ctx))
-        .join(", ");
+      const elements = arr.elements.map(el => transpileExpression(el, ctx)).join(", ");
       return `[${elements}]`;
     }
 
