@@ -1,28 +1,70 @@
-# Source files
+# --------------------------------------
+# Source and Test Files
+# --------------------------------------
 src/
 tests/
 examples/
+coverage/
 
-# Config files
+# --------------------------------------
+# Configuration Files
+# --------------------------------------
 tsconfig.json
+tsconfig.*.json
 deno.json
+deno.jsonc
 .editorconfig
-.prettierrc
+.eslintrc*
+.prettierrc*
 .prettierignore
+commitlint.config.*
+eslint.config.*
+babel.config.*
+jest.config.*
+vite.config.*
+rollup.config.*
+webpack.config.*
 
-# Git
-.git
+# --------------------------------------
+# Git / Repo Metadata
+# --------------------------------------
+.git/
 .gitignore
 .gitattributes
 
-# CI/CD
+# --------------------------------------
+# CI/CD and Hooks
+# --------------------------------------
 .github/
+.husky/
+lint-staged.config.*
+.npmrc
 
-# IDE
+# --------------------------------------
+# IDE / Editor Files
+# --------------------------------------
 .vscode/
 .idea/
+*.swp
 
-# Misc
+# --------------------------------------
+# Logs and Temp Files
+# --------------------------------------
 *.log
 *.tmp
+*.bak
+*.cache
+*.pid
 .DS_Store
+Thumbs.db
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# --------------------------------------
+# Build and Distribution Artifacts
+# --------------------------------------
+dist/**/*.map
+build/
+out/
