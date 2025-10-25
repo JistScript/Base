@@ -1,4 +1,4 @@
-import { RuntimeVal, NumberVal, StringValue } from "./values.ts";
+import { RuntimeVal, NumberVal, StringValue } from "./values";
 import {
   BinaryExpr,
   NumericLiteral,
@@ -12,8 +12,8 @@ import {
   FunctionDeclaration,
   StringLiteral,
   ArrayLiteral,
-} from "../base/typeAst.ts";
-import Environment from "./environment.ts";
+} from "../parser/typeAst";
+import Environment from "./environment";
 import {
   eval_Identifier,
   eval_assignment,
@@ -21,12 +21,12 @@ import {
   eval_object_expr,
   eval_call_expr,
   eval_array_literal,
-} from "./eval/expressions.ts";
+} from "./eval/expressions";
 import {
   eval_program_expr,
   eval_var_declaration,
   eval_function_declaration,
-} from "./eval/evalStatements.ts";
+} from "./eval/evalStatements";
 
 export function evaluate(astNode: Statement, env: Environment): RuntimeVal {
   switch (astNode.kind) {
@@ -63,6 +63,6 @@ export function evaluate(astNode: Statement, env: Environment): RuntimeVal {
         "Ast Node has not yet been set up for interpretation",
         astNode
       );
-      Deno.exit(0);
+      process.exit(1);
   }
 }

@@ -1,0 +1,86 @@
+{
+  "name": "jistscript",
+  "version": "1.0.0",
+  "description": "A TypeScript-based scripting language engineered for data-centric applications, driven by robust data processing capabilities.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "jistc": "./bin/jistc",
+    "jist": "./bin/jistc"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./plugin-vite": {
+      "import": "./dist/plugins/vite-plugin.js",
+      "types": "./dist/plugins/vite-plugin.d.ts"
+    },
+    "./plugin-webpack": {
+      "import": "./dist/plugins/webpack-loader.js",
+      "types": "./dist/plugins/webpack-loader.d.ts"
+    },
+    "./plugin-rollup": {
+      "import": "./dist/plugins/rollup-plugin.js",
+      "types": "./dist/plugins/rollup-plugin.d.ts"
+    },
+    "./plugin-esbuild": {
+      "import": "./dist/plugins/esbuild-plugin.js",
+      "types": "./dist/plugins/esbuild-plugin.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "test": "deno test",
+    "prepublishOnly": "npm run build",
+    "lint": "deno lint src/",
+    "format": "deno fmt src/",
+    "prepare": "husky install"
+  },
+  "keywords": [
+    "jistscript",
+    "compiler",
+    "transpiler",
+    "scripting-language",
+    "typescript-alternative",
+    "programming-language"
+  ],
+  "author": "Joel Deon Dsouza",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JistScript/Base.git"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/node": "^20.19.23",
+    "glob": "^11.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,scss,md}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

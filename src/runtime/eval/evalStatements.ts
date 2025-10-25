@@ -1,11 +1,11 @@
-import { RuntimeVal, NEW_NULL, FunctionVal } from "./../values.ts";
+import { RuntimeVal, NEW_NULL, FunctionVal } from "../values";
 import {
   FunctionDeclaration,
   Program,
   VarDeclaration,
-} from "../../base/typeAst.ts";
-import Environment from "./../environment.ts";
-import { evaluate } from "../interpreter.ts";
+} from "../../parser/typeAst";
+import Environment from "../environment";
+import { evaluate } from "../interpreter";
 
 export function eval_program_expr(
   program: Program,

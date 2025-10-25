@@ -14,8 +14,8 @@ import {
   MemberExpr,
   StringLiteral,
   ArrayLiteral,
-} from "./typeAst.ts";
-import { tokenize, Token, TokenType } from "./lexer.ts";
+} from "./typeAst";
+import { tokenize, Token, TokenType } from "./lexer";
 
 export default class Parser {
   private tokens: Token[] = [];
@@ -37,7 +37,7 @@ export default class Parser {
     const prev = this.tokens.shift() as Token;
     if (!prev || prev.type != type) {
       console.error("Parser Error:\n", err, prev, "- Expect: ", type);
-      Deno.exit(1);
+      process.exit(1);
     }
     return prev;
   }
@@ -57,7 +57,7 @@ export default class Parser {
   }
 
   private parseStatement(): Statement {
-    // skip parseStatement
+    // skip parseStatement //
     switch (this.at().type) {
       case TokenType.Let:
       case TokenType.Const:
@@ -71,10 +71,7 @@ export default class Parser {
 
   parse_function_declaration(): Statement {
     this.next();
-    const name = this.expectRender(
-      TokenType.Identifier,
-      "Name is required for all function"
-    ).value;
+    const name = this.expectRender(TokenType.Identifier, "Name is required for all function").value;
     const args = this.parse_args();
     const params: string[] = [];
     for (const arg of args) {
@@ -84,21 +81,12 @@ export default class Parser {
       }
       params.push((arg as Identifier).symbol);
     }
-    this.expectRender(
-      TokenType.OpenBrace,
-      "Function expected a body declaration"
-    );
+    this.expectRender(TokenType.OpenBrace, "Function expected a body declaration");
     const body: Statement[] = [];
-    while (
-      this.at().type != TokenType.EOF &&
-      this.at().type != TokenType.CloseBrace
-    ) {
+    while (this.at().type != TokenType.EOF && this.at().type != TokenType.CloseBrace) {
       body.push(this.parseStatement());
     }
-    this.expectRender(
-      TokenType.CloseBrace,
-      "Required a closing brace for a function declaration"
-    );
+    this.expectRender(TokenType.CloseBrace, "Required a closing brace for a function declaration");
     const fn = {
       kind: "FunctionDeclaration",
       parameters: params,
@@ -125,20 +113,14 @@ export default class Parser {
         constant: false,
       } as VarDeclaration;
     }
-    this.expectRender(
-      TokenType.Equals,
-      "Expected equals tokens identifier in var declaraytion"
-    );
+    this.expectRender(TokenType.Equals, "Expected equals tokens identifier in var declaraytion");
     const declaration = {
       kind: "VarDeclaration",
       value: this.parseExpression(),
       identifier,
       constant: isConstant,
     } as VarDeclaration;
-    this.expectRender(
-      TokenType.Semicolon,
-      "Var declaration state must end with semicolon"
-    );
+    this.expectRender(TokenType.Semicolon, "Var declaration state must end with semicolon");
     return declaration;
   }
 
@@ -175,10 +157,7 @@ export default class Parser {
         continue;
       }
       // { key: data } //
-      this.expectRender(
-        TokenType.Colon,
-        "Key colon mising in object expression"
-      );
+      this.expectRender(TokenType.Colon, "Key colon mising in object expression");
       const value = this.parseExpression();
       properties.push({ kind: "Property", value, key });
       if (this.at().type != TokenType.CloseBrace) {
@@ -208,11 +187,7 @@ export default class Parser {
   // multi //
   private parse_multi_expr(): Expression {
     let left = this.parse_call_member_expr();
-    while (
-      this.at().value == "/" ||
-      this.at().value == "*" ||
-      this.at().value == "%"
-    ) {
+    while (this.at().value == "/" || this.at().value == "*" || this.at().value == "%") {
       const operator = this.next().value;
       const right = this.parse_call_member_expr();
       left = {
@@ -247,8 +222,7 @@ export default class Parser {
 
   private parse_args(): Expression[] {
     this.expectRender(TokenType.OpenParen, "Required open Parenthesis");
-    const args =
-      this.at().type == TokenType.CloseParen ? [] : this.parse_arguments_list();
+    const args = this.at().type == TokenType.CloseParen ? [] : this.parse_arguments_list();
     this.expectRender(TokenType.CloseParen, "Closing Parenthesis Required");
     return args;
   }
@@ -263,10 +237,7 @@ export default class Parser {
 
   private parse_member_expr(): Expression {
     let object = this.parse_prime_expr();
-    while (
-      this.at().type == TokenType.Dot ||
-      this.at().type == TokenType.OpenBracket
-    ) {
+    while (this.at().type == TokenType.Dot || this.at().type == TokenType.OpenBracket) {
       const operator = this.next();
       let property: Expression;
       let computed: boolean;
@@ -281,10 +252,7 @@ export default class Parser {
       } else {
         property = this.parseExpression();
         computed = true;
-        this.expectRender(
-          TokenType.CloseBracket,
-          "Closing bracket computed property missing"
-        );
+        this.expectRender(TokenType.CloseBracket, "Closing bracket computed property missing");
       }
       object = { kind: "MemberExpr", object, property, computed } as MemberExpr;
     }
@@ -327,15 +295,12 @@ export default class Parser {
             throw "Expected comma or closing bracket in array literal";
           }
         }
-        this.expectRender(
-          TokenType.CloseBracket,
-          "Expected closing bracket for array literal"
-        );
+        this.expectRender(TokenType.CloseBracket, "Expected closing bracket for array literal");
         return { kind: "ArrayLiteral", elements } as ArrayLiteral;
       }
       default:
         console.error("Error token found in parsing", this.at());
-        Deno.exit(1);
+        process.exit(1);
     }
   }
 }

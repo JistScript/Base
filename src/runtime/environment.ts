@@ -4,7 +4,7 @@ import {
   NEW_NULL,
   NEW_UNDEFINED,
   RuntimeVal,
-} from "./values.ts";
+} from "./values";
 
 export function createGlobalEnv() {
   const env = new Environment();

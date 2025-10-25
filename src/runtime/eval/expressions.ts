@@ -5,9 +5,9 @@ import {
   CallExpr,
   Identifier,
   ObjectLiteral,
-} from "../../base/typeAst.ts";
-import Environment from "../environment.ts";
-import { evaluate } from "../interpreter.ts";
+} from "../../parser/typeAst";
+import Environment from "../environment";
+import { evaluate } from "../interpreter";
 import {
   FunctionVal,
   NEW_NULL,
@@ -16,7 +16,7 @@ import {
   ObjectVal,
   RuntimeVal,
   ArrayVal,
-} from "../values.ts";
+} from "../values";
 
 export function eval_array_literal(
   astNode: ArrayLiteral,

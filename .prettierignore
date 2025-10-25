@@ -1,0 +1,22 @@
+# Build outputs
+dist/
+*.min.js
+*.map
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+coverage/
+*.d.ts
+
+# Config
+pnpm-lock.yaml
+
+# Misc
+.github/
+CHANGELOG.md
+LICENSE

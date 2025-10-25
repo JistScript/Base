@@ -1,0 +1,44 @@
+{
+  "name": "@JoelDeonDsouza/jistscript",
+ "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli/jistc.ts",
+    "./compiler": "./src/compiler/transpiler.ts",
+    "./parser": "./src/parser/parser.ts"
+  },
+  "tasks": {
+    "dev": "deno run --allow-read --allow-env --watch src/cli/jistc.ts",
+    "test": "deno test --allow-read",
+    "build": "tsc",
+    "build:npm": "deno run -A scripts/build_npm.ts",
+    "cli": "deno run --allow-read --allow-env src/cli/jistc.ts",
+    "repl": "deno run --allow-read src/cli/repl.ts",
+    "lint": "deno lint src/",
+    "fmt": "deno fmt src/",
+    "check": "deno check src/**/*.ts"
+  },
+  "imports": {
+    "@/": "./src/",
+    "@parser/": "./src/parser/",
+    "@runtime/": "./src/runtime/",
+    "@compiler/": "./src/compiler/"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-explicit-any"]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  },
+  "test": {
+    "include": ["tests/**/*.test.ts"]
+  }
+}

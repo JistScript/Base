@@ -126,12 +126,8 @@ export function tokenize(sourceCode: string): Token[] {
         } else if (isSkippable(char)) {
           continue;
         } else {
-          console.error(
-            "Unrecognized character found in source:",
-            char.charCodeAt(0),
-            char
-          );
-          Deno.exit(1);
+          console.error("Unrecognized character found in source:", char.charCodeAt(0), char);
+          process.exit(1);
         }
     }
   }

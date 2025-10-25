@@ -1,5 +1,5 @@
-import Environment from "./environment.ts";
-import { Statement } from "../base/typeAst.ts";
+import Environment from "./environment";
+import { Statement } from "../parser/typeAst";
 export type ValueTypes =
   | "null"
   | "number"
