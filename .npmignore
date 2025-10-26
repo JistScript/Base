@@ -13,6 +13,7 @@ tsconfig.json
 tsconfig.*.json
 deno.json
 deno.jsonc
+deno.lock
 .editorconfig
 .eslintrc*
 .prettierrc*
