@@ -1,5 +1,6 @@
 import Environment from "./environment";
 import { Statement } from "../parser/typeAst";
+
 export type ValueTypes =
   | "null"
   | "number"
@@ -9,7 +10,8 @@ export type ValueTypes =
   | "function"
   | "string"
   | "array"
-  | "undefined";
+  | "undefined"
+  | "state-tuple";
 
 export interface RuntimeVal {
   type: ValueTypes;
@@ -61,6 +63,19 @@ export interface FunctionVal extends RuntimeVal {
   body: Statement[];
 }
 
+// State management types //
+export interface StateTypeInfo {
+  typeName: string;
+  elementType?: string;
+}
+
+export interface StateTuple extends RuntimeVal {
+  type: "state-tuple";
+  value: RuntimeVal;
+  setter: FunctionVal;
+  typeInfo?: StateTypeInfo;
+}
+
 export function NATIVE_FN(call: FunctionCall) {
   return { type: "native-fn", call } as NativeFnVal;
 }
@@ -79,4 +94,50 @@ export function NEW_BOOL(b = true) {
 
 export function NEW_UNDEFINED() {
   return { type: "undefined" } as RuntimeVal;
+}
+
+export function NEW_STRING(s = "") {
+  return new StringValue(s);
+}
+
+export function NEW_ARRAY(elements: RuntimeVal[] = []) {
+  return { type: "array", elements } as ArrayVal;
+}
+
+export function NEW_OBJECT(properties: Map<string, RuntimeVal> = new Map()) {
+  return { type: "object", properties } as ObjectVal;
+}
+
+// Type validation helpers //
+export function validateStateType(value: RuntimeVal, typeInfo: StateTypeInfo): boolean {
+  switch (typeInfo.typeName) {
+    case "String":
+      return value.type === "string";
+    case "Number":
+      return value.type === "number";
+    case "Boolean":
+      return value.type === "boolean";
+    case "Array":
+      if (value.type !== "array") return false;
+      if (typeInfo.elementType) {
+        const arr = value as ArrayVal;
+        return arr.elements.every(elem => {
+          switch (typeInfo.elementType) {
+            case "String":
+              return elem.type === "string";
+            case "Number":
+              return elem.type === "number";
+            case "Boolean":
+              return elem.type === "boolean";
+            default:
+              return true;
+          }
+        });
+      }
+      return true;
+    case "Object":
+      return value.type === "object";
+    default:
+      return true;
+  }
 }

@@ -14,6 +14,7 @@ import {
   MemberExpr,
   StringLiteral,
   ArrayLiteral,
+  TypeAnnotation,
 } from "./typeAst";
 import { tokenize, Token, TokenType } from "./lexer";
 
@@ -38,6 +39,7 @@ export default class Parser {
     if (!prev || prev.type != type) {
       console.error("Parser Error:\n", err, prev, "- Expect: ", type);
       process.exit(1);
+      // Deno.exit(1);
     }
     return prev;
   }
@@ -64,9 +66,39 @@ export default class Parser {
         return this.parse_var_declaration();
       case TokenType.Function:
         return this.parse_function_declaration();
-      default:
-        return this.parseExpression();
+      case TokenType.Identifier:
+        // Check if this is a return statement //
+        if (this.at().value === "return") {
+          return this.parse_return_statement();
+        }
+      // Fall through to default for other identifiers //
+      default: {
+        const expr = this.parseExpression();
+        if (this.at().type === TokenType.Semicolon) {
+          this.next();
+        }
+        return expr;
+      }
     }
+  }
+
+  private parse_return_statement(): Statement {
+    this.next();
+    if (this.at().type === TokenType.Semicolon) {
+      this.next();
+      return {
+        kind: "ReturnStatement",
+        value: undefined,
+      } as any;
+    }
+    const value = this.parseExpression();
+    if (this.at().type === TokenType.Semicolon) {
+      this.next();
+    }
+    return {
+      kind: "ReturnStatement",
+      value,
+    } as any;
   }
 
   parse_function_declaration(): Statement {
@@ -98,6 +130,9 @@ export default class Parser {
 
   parse_var_declaration(): Statement {
     const isConstant = this.next().type == TokenType.Const;
+    if (this.at().type === TokenType.OpenBracket) {
+      return this.parse_destructuring_declaration(isConstant);
+    }
     const identifier = this.expectRender(
       TokenType.Identifier,
       "Expected Identifier to let or const keywords"
@@ -113,7 +148,7 @@ export default class Parser {
         constant: false,
       } as VarDeclaration;
     }
-    this.expectRender(TokenType.Equals, "Expected equals tokens identifier in var declaraytion");
+    this.expectRender(TokenType.Equals, "Expected equals tokens identifier in var declaration");
     const declaration = {
       kind: "VarDeclaration",
       value: this.parseExpression(),
@@ -122,6 +157,34 @@ export default class Parser {
     } as VarDeclaration;
     this.expectRender(TokenType.Semicolon, "Var declaration state must end with semicolon");
     return declaration;
+  }
+
+  private parse_destructuring_declaration(isConstant: boolean): Statement {
+    this.next();
+    const elements: Identifier[] = [];
+    while (this.at().type !== TokenType.CloseBracket) {
+      const elem = this.expectRender(TokenType.Identifier, "Expected identifier in destructuring");
+      elements.push({ kind: "Identifier", symbol: elem.value } as Identifier);
+      if (this.at().type === TokenType.Comma) {
+        this.next();
+      } else if (this.at().type !== TokenType.CloseBracket) {
+        throw "Expected comma or closing bracket in destructuring";
+      }
+    }
+    this.expectRender(TokenType.CloseBracket, "Expected closing bracket in destructuring");
+    this.expectRender(TokenType.Equals, "Expected equals after destructuring");
+    const value = this.parseExpression();
+    this.expectRender(TokenType.Semicolon, "Var declaration must end with semicolon");
+    return {
+      kind: "VarDeclaration",
+      identifier: "",
+      constant: isConstant,
+      value,
+      destructuring: {
+        kind: "ArrayDestructuring",
+        elements,
+      },
+    } as VarDeclaration;
   }
 
   private parseExpression(): Expression {
@@ -137,6 +200,7 @@ export default class Parser {
     }
     return left;
   }
+
   private parse_obj_expr(): Expression {
     if (this.at().type != TokenType.OpenBrace) {
       return this.parse_add_expr();
@@ -144,24 +208,25 @@ export default class Parser {
     this.next();
     const properties = new Array<Property>();
     while (this.notEOF() && this.at().type != TokenType.CloseBrace) {
-      const key = this.expectRender(TokenType.Identifier, "Key expected").value;
-      // key: pair => key //
+      const keyToken = this.at();
+      if (keyToken.type !== TokenType.Identifier && keyToken.type !== TokenType.TypeAnnotation) {
+        this.expectRender(TokenType.Identifier, "Key expected");
+      }
+      const key = this.next().value;
       if (this.at().type == TokenType.Comma) {
         this.next();
         properties.push({ key, kind: "Property" } as Property);
         continue;
-      }
-      // key: pair => {key} //
-      else if (this.at().type == TokenType.CloseBrace) {
+      } else if (this.at().type == TokenType.CloseBrace) {
         properties.push({ key, kind: "Property" });
         continue;
       }
-      // { key: data } //
-      this.expectRender(TokenType.Colon, "Key colon mising in object expression");
+      // Full property: { key: value } //
+      this.expectRender(TokenType.Colon, "Key colon missing in object expression");
       const value = this.parseExpression();
       properties.push({ kind: "Property", value, key });
       if (this.at().type != TokenType.CloseBrace) {
-        this.expectRender(TokenType.Comma, "Key colon is expected");
+        this.expectRender(TokenType.Comma, "Comma expected after property");
       }
     }
     this.expectRender(TokenType.CloseBrace, "Closing bracket not rendered");
@@ -209,15 +274,69 @@ export default class Parser {
   }
 
   private parse_call_expr(caller: Expression): Expression {
+    const args = this.parse_args();
     let call_expr: Expression = {
       kind: "CallExpr",
       caller,
-      args: this.parse_args(),
+      args,
     } as CallExpr;
+    // Handle chained calls //
     if (this.at().type == TokenType.OpenParen) {
       call_expr = this.parse_call_expr(call_expr);
     }
+
     return call_expr;
+  }
+
+  private parse_type_annotation(): { typeAnnotation: TypeAnnotation; functionArgs?: Expression[] } {
+    const typeName = this.expectRender(TokenType.TypeAnnotation, "Expected type annotation").value;
+    let genericTypes: TypeAnnotation[] | undefined;
+    let functionArgs: Expression[] | undefined;
+    if (this.at().type === TokenType.OpenParen) {
+      const nextToken = this.tokens[1];
+      if (nextToken && nextToken.type === TokenType.TypeAnnotation) {
+        this.next();
+        genericTypes = [];
+        while (this.at().type === TokenType.TypeAnnotation) {
+          genericTypes.push(this.parse_type_annotation().typeAnnotation);
+          if (this.at().type === TokenType.Comma) {
+            const nextAfterComma = this.tokens[1];
+            if (nextAfterComma && nextAfterComma.type === TokenType.TypeAnnotation) {
+              this.next();
+            } else {
+              this.next();
+              functionArgs = [];
+              while (this.at().type !== TokenType.CloseParen && this.at().type !== TokenType.EOF) {
+                functionArgs.push(this.parseExpression());
+                if (this.at().type === TokenType.Comma) {
+                  this.next();
+                } else {
+                  break;
+                }
+              }
+              this.expectRender(TokenType.CloseParen, "Expected closing paren");
+              break;
+            }
+          } else if (this.at().type === TokenType.CloseParen) {
+            // Properly closed generics //
+            this.next();
+            break;
+          } else {
+            this.expectRender(TokenType.CloseParen, "Expected closing paren for generic type");
+            break;
+          }
+        }
+      }
+    }
+
+    return {
+      typeAnnotation: {
+        kind: "TypeAnnotation",
+        typeName,
+        genericTypes,
+      } as TypeAnnotation,
+      functionArgs,
+    };
   }
 
   private parse_args(): Expression[] {
@@ -237,7 +356,29 @@ export default class Parser {
 
   private parse_member_expr(): Expression {
     let object = this.parse_prime_expr();
-    while (this.at().type == TokenType.Dot || this.at().type == TokenType.OpenBracket) {
+
+    while (
+      this.at().type == TokenType.Dot ||
+      this.at().type == TokenType.OpenBracket ||
+      this.at().type == TokenType.Colon
+    ) {
+      if (this.at().type == TokenType.Colon) {
+        this.next();
+        const result = this.parse_type_annotation();
+        const typeAnnotation = result.typeAnnotation;
+        let args: Expression[] = result.functionArgs || [];
+        if (args.length === 0 && this.at().type === TokenType.OpenParen) {
+          args = this.parse_args();
+        }
+        object = {
+          kind: "CallExpr",
+          caller: object,
+          args,
+          typeAnnotation,
+        } as CallExpr;
+        continue;
+      }
+
       const operator = this.next();
       let property: Expression;
       let computed: boolean;
@@ -301,6 +442,7 @@ export default class Parser {
       default:
         console.error("Error token found in parsing", this.at());
         process.exit(1);
+      // Deno.exit(1);
     }
   }
 }

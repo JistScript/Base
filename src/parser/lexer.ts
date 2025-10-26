@@ -17,6 +17,7 @@ export enum TokenType {
   Colon,
   Dot,
   StringLiteral,
+  TypeAnnotation,
   EOF,
 }
 
@@ -25,6 +26,9 @@ const ReservedKeywords: Record<string, TokenType> = {
   const: TokenType.Const,
   function: TokenType.Function,
 };
+
+// Built-in type keywords //
+const TypeKeywords = new Set(["String", "Number", "Boolean", "Array", "Object", "Any", "Void"]);
 
 export interface Token {
   value: string;
@@ -37,7 +41,7 @@ function createToken(value: string, type: TokenType): Token {
 
 function isAlphabetic(char: string): boolean {
   const code = char.charCodeAt(0);
-  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || char === "_";
 }
 
 function isSkippable(char: string): boolean {
@@ -46,6 +50,10 @@ function isSkippable(char: string): boolean {
 
 function isInt(char: string): boolean {
   return /^[0-9]+$/.test(char);
+}
+
+function isAlphaNumeric(char: string): boolean {
+  return isAlphabetic(char) || isInt(char);
 }
 
 export function tokenize(sourceCode: string): Token[] {
@@ -108,26 +116,31 @@ export function tokenize(sourceCode: string): Token[] {
       default:
         if (isInt(char)) {
           let num = char;
-          while (src.length > 0 && isInt(src[0])) {
+          while (src.length > 0 && (isInt(src[0]) || src[0] === ".")) {
             num += src.shift()!;
           }
           tokens.push(createToken(num, TokenType.Number));
         } else if (isAlphabetic(char)) {
           let ident = char;
-          while (src.length > 0 && isAlphabetic(src[0])) {
+          while (src.length > 0 && isAlphaNumeric(src[0])) {
             ident += src.shift()!;
           }
-          const reserved = ReservedKeywords[ident];
-          if (reserved !== undefined) {
-            tokens.push(createToken(ident, reserved));
+          if (TypeKeywords.has(ident)) {
+            tokens.push(createToken(ident, TokenType.TypeAnnotation));
           } else {
-            tokens.push(createToken(ident, TokenType.Identifier));
+            const reserved = ReservedKeywords[ident];
+            if (reserved !== undefined) {
+              tokens.push(createToken(ident, reserved));
+            } else {
+              tokens.push(createToken(ident, TokenType.Identifier));
+            }
           }
         } else if (isSkippable(char)) {
           continue;
         } else {
           console.error("Unrecognized character found in source:", char.charCodeAt(0), char);
           process.exit(1);
+          // Deno.exit(1);
         }
     }
   }

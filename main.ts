@@ -12,6 +12,7 @@ async function repl() {
     const input = prompt("> ");
     if (!input || input.includes("exit")) {
       process.exit(1);
+      // Deno.exit(1);
     }
     const program = parser.proTypeAsst(input);
     const results = evaluate(program, env);

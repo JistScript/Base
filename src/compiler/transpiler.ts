@@ -10,6 +10,7 @@ import {
   ObjectLiteral,
   ArrayLiteral,
   AssignmentExpr,
+  TypeAnnotation,
 } from "../parser/typeAst";
 
 interface TranspileOptions {
@@ -23,13 +24,60 @@ interface TranspileOptions {
 export function transpileToJS(ast: Program, options: TranspileOptions = {}): string {
   const ctx = new TranspileContext(options);
   const programCode = transpileProgram(ast, ctx);
-  // Mark function runtime  //
+
+  // State management runtime //
   const runtime =
     options.injectRuntime !== false
       ? `// JistScript Runtime
 const mark = typeof window !== 'undefined' && window.console
   ? (...args) => console.log('[JistScript]', ...args)
   : (...args) => console.log('[JistScript]', ...args);
+
+// State management system
+const __jist_state_counter = { value: 0 };
+const __jist_state_store = new Map();
+const __jist_component_states = new Map();
+
+function useState(initialValue, typeInfo) {
+  const stateId = __jist_state_counter.value++;
+
+  if (!__jist_state_store.has(stateId)) {
+    __jist_state_store.set(stateId, initialValue);
+  }
+
+  const currentValue = __jist_state_store.get(stateId);
+
+  const setState = (newValue) => {
+    if (typeInfo && !validateType(newValue, typeInfo)) {
+      console.warn(\`[JistScript] Type mismatch: expected \${typeInfo.type}, got \${typeof newValue}\`);
+    }
+    __jist_state_store.set(stateId, newValue);
+    return newValue;
+  };
+
+  return [currentValue, setState];
+}
+
+function validateType(value, typeInfo) {
+  switch (typeInfo.type) {
+    case 'String':
+      return typeof value === 'string';
+    case 'Number':
+      return typeof value === 'number';
+    case 'Boolean':
+      return typeof value === 'boolean';
+    case 'Array':
+      if (!Array.isArray(value)) return false;
+      if (typeInfo.elementType) {
+        return value.every(item => validateType(item, { type: typeInfo.elementType }));
+      }
+      return true;
+    case 'Object':
+      return typeof value === 'object' && value !== null && !Array.isArray(value);
+    default:
+      return true;
+  }
+}
 `
       : "";
 
@@ -61,6 +109,11 @@ function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
     case "VarDeclaration": {
       const decl = stmt as VarDeclaration;
       const keyword = decl.constant ? "const" : "let";
+      if (decl.destructuring && decl.value) {
+        const elements = decl.destructuring.elements.map(e => e.symbol).join(", ");
+        const value = transpileExpression(decl.value, ctx);
+        return `${indent}${keyword} [${elements}] = ${value};`;
+      }
       const value = decl.value ? transpileExpression(decl.value, ctx) : "undefined";
       return `${indent}${keyword} ${decl.identifier} = ${value};`;
     }
@@ -118,6 +171,11 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
     case "CallExpr": {
       const call = expr as CallExpr;
       const caller = transpileExpression(call.caller, ctx);
+      if (caller === "useState" && call.typeAnnotation) {
+        const typeInfo = transpileTypeAnnotation(call.typeAnnotation);
+        const args = call.args.map(arg => transpileExpression(arg, ctx)).join(", ");
+        return `useState(${args}, ${typeInfo})`;
+      }
       const args = call.args.map(arg => transpileExpression(arg, ctx)).join(", ");
       return `${caller}(${args})`;
     }
@@ -152,4 +210,15 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
     default:
       return `/* Unknown: ${expr.kind} */`;
   }
+}
+
+function transpileTypeAnnotation(typeAnnotation: TypeAnnotation): string {
+  let typeInfo = `{ type: "${typeAnnotation.typeName}"`;
+  if (typeAnnotation.genericTypes && typeAnnotation.genericTypes.length > 0) {
+    const elementType = typeAnnotation.genericTypes[0].typeName;
+    typeInfo += `, elementType: "${elementType}"`;
+  }
+
+  typeInfo += " }";
+  return typeInfo;
 }

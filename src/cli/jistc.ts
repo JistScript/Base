@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { join, dirname, relative, resolve } from "node:path";
+import { join, dirname, relative } from "node:path";
 import { glob } from "glob";
 import Parser from "../parser/parser";
 import { transpileToJS } from "../compiler/transpiler";

@@ -56,9 +56,9 @@ export type NodeType =
   | "Directive"
   | "DirectiveLiteral"
   | "BigIntLiteral"
-  | "BigIntLiteralTypeAnnotation"
-  | "BigIntLiteralTypeAnnotationTypeAnnotation"
-  | "BigIntLiteralTypeAnnotationTypeAnnotationTypeAnnotation";
+  | "StateHookCall"
+  | "ArrayDestructuring"
+  | "TypeAnnotation";
 
 // statement //
 export interface Statement {
@@ -75,6 +75,12 @@ export interface VarDeclaration extends Statement {
   constant: boolean;
   identifier: string;
   value?: Expression;
+  destructuring?: ArrayDestructuring;
+}
+
+export interface ArrayDestructuring extends Statement {
+  kind: "ArrayDestructuring";
+  elements: Identifier[];
 }
 
 export interface FunctionDeclaration extends Statement {
@@ -103,6 +109,20 @@ export interface CallExpr extends Expression {
   kind: "CallExpr";
   args: Expression[];
   caller: Expression;
+  typeAnnotation?: TypeAnnotation;
+}
+
+export interface StateHookCall extends Expression {
+  kind: "StateHookCall";
+  hookName: string;
+  typeAnnotation: TypeAnnotation;
+  initialValue: Expression;
+}
+
+export interface TypeAnnotation extends Expression {
+  kind: "TypeAnnotation";
+  typeName: string;
+  genericTypes?: TypeAnnotation[];
 }
 
 export interface MemberExpr extends Expression {
@@ -127,6 +147,7 @@ export interface Property extends Expression {
   key: string;
   value?: Expression;
 }
+
 export interface ObjectLiteral extends Expression {
   kind: "ObjectLiteral";
   properties: Property[];
@@ -137,7 +158,7 @@ export interface StringLiteral extends Expression {
   value: string;
 }
 
-export interface ArrayLiteral {
+export interface ArrayLiteral extends Expression {
   kind: "ArrayLiteral";
   elements: Expression[];
 }
@@ -320,20 +341,14 @@ export interface TemplateElement {
 
 export interface ImportDeclaration extends Statement {
   kind: "ImportDeclaration";
-  specifiers:
-    | ImportSpecifier[]
-    | ImportDefaultSpecifier[]
-    | ImportNamespaceSpecifier[];
+  specifiers: ImportSpecifier[] | ImportDefaultSpecifier[] | ImportNamespaceSpecifier[];
   source: StringLiteral;
 }
 
 export interface ExportDeclaration extends Statement {
   kind: "ExportDeclaration";
   declaration: Statement | null;
-  specifiers:
-    | ExportSpecifier[]
-    | ExportNamespaceSpecifier[]
-    | ExportDefaultSpecifier[];
+  specifiers: ExportSpecifier[] | ExportNamespaceSpecifier[] | ExportDefaultSpecifier[];
   source?: StringLiteral;
 }
 
@@ -392,21 +407,5 @@ export interface DirectiveLiteral extends Expression {
 
 export interface BigIntLiteral extends Expression {
   kind: "BigIntLiteral";
-  value: bigint;
-}
-
-export interface BigIntLiteralTypeAnnotation extends Expression {
-  kind: "BigIntLiteralTypeAnnotation";
-  value: bigint;
-}
-
-export interface BigIntLiteralTypeAnnotationTypeAnnotation extends Expression {
-  kind: "BigIntLiteralTypeAnnotationTypeAnnotation";
-  value: bigint;
-}
-
-export interface BigIntLiteralTypeAnnotationTypeAnnotationTypeAnnotation
-  extends Expression {
-  kind: "BigIntLiteralTypeAnnotationTypeAnnotationTypeAnnotation";
   value: bigint;
 }
