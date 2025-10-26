@@ -11,6 +11,7 @@ import {
   ArrayLiteral,
   AssignmentExpr,
   TypeAnnotation,
+  ReturnStatement,
 } from "../parser/typeAst.js";
 
 interface TranspileOptions {
@@ -143,6 +144,14 @@ function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
       const body = fn.body.map(s => transpileStatement(s, ctx)).join("\n");
       ctx.indent--;
       return `${indent}function ${fn.name}(${params}) {\n${body}\n${indent}}`;
+    }
+    case "ReturnStatement": {
+      const returnStmt = stmt as ReturnStatement;
+      if (returnStmt.value) {
+        const value = transpileExpression(returnStmt.value, ctx);
+        return `${indent}return ${value};`;
+      }
+      return `${indent}return;`;
     }
 
     case "AssignmentExpr":

@@ -9,9 +9,12 @@ import {
   validateStateType,
 } from "./values.js";
 
+// Type for state listeners //
+type StateListener = () => void;
+
 // Global state counter for useState //
 let stateIdCounter = 0;
-const stateStore = new Map<number, RuntimeVal>();
+const stateStore = new Map<number, { value: RuntimeVal; listeners: StateListener[] }>();
 
 export function createGlobalEnv() {
   const env = new Environment();
@@ -22,7 +25,7 @@ export function createGlobalEnv() {
   env.declareVar("false", NEW_BOOL(false), true);
   env.declareVar("undefined", NEW_UNDEFINED(), true);
 
-  // native methods //
+  // Native mark function //
   env.declareVar(
     "mark",
     NATIVE_FN(args => {
@@ -56,40 +59,80 @@ export function createGlobalEnv() {
     true
   );
 
-  // useState implementation //
+  // Enhanced useState with reactive updates //
   env.declareVar(
     "useState",
     NATIVE_FN(args => {
       if (args.length === 0) {
         throw "useState requires an initial value";
       }
+
       const initialValue = args[0];
       const typeInfo: StateTypeInfo | undefined = args[1] as any;
+
       if (typeInfo && !validateStateType(initialValue, typeInfo)) {
         console.warn(
           `[JistScript] Type mismatch in useState: expected ${typeInfo.typeName}, got ${initialValue.type}`
         );
       }
+
       const stateId = stateIdCounter++;
+
+      // Initialize state with listeners array //
       if (!stateStore.has(stateId)) {
-        stateStore.set(stateId, initialValue);
+        stateStore.set(stateId, {
+          value: initialValue,
+          listeners: [],
+        });
       }
-      const currentValue = stateStore.get(stateId)!;
-      // Create setter function //
+
+      const stateEntry = stateStore.get(stateId)!;
+
+      // Create reactive setter //
       const setter = NATIVE_FN(setterArgs => {
         if (setterArgs.length === 0) {
           throw "State setter requires a new value";
         }
+
         const newValue = setterArgs[0];
+
         if (typeInfo && !validateStateType(newValue, typeInfo)) {
           console.warn(
             `[JistScript] Type mismatch in setState: expected ${typeInfo.typeName}, got ${newValue.type}`
           );
         }
-        stateStore.set(stateId, newValue);
+
+        // Update the stored value //
+        stateEntry.value = newValue;
+
+        // Notify all listeners //
+        stateEntry.listeners.forEach((listener: StateListener) => {
+          try {
+            listener();
+          } catch (e) {
+            console.error("[JistScript] Error in state listener:", e);
+          }
+        });
+
         return newValue;
       });
-      return NEW_ARRAY([currentValue, setter]);
+
+      // Add subscribe function to setter //
+      (setter as any).subscribe = NATIVE_FN(subscribeArgs => {
+        if (subscribeArgs.length > 0 && subscribeArgs[0].type === "native-fn") {
+          const callback = (subscribeArgs[0] as any).call as StateListener;
+          stateEntry.listeners.push(callback);
+        }
+        return NEW_NULL();
+      });
+
+      // Add getValue function to get current value //
+      (setter as any).getValue = NATIVE_FN(() => {
+        return stateEntry.value;
+      });
+
+      // Return [currentValue, setter] //
+      return NEW_ARRAY([stateEntry.value, setter]);
     }),
     true
   );

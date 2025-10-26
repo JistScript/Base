@@ -248,6 +248,7 @@ export interface ContinueStatement extends Statement {
 }
 
 export interface ReturnStatement extends Statement {
+  value: any;
   kind: "ReturnStatement";
   argument?: Expression;
 }

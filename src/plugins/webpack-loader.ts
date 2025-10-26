@@ -1,5 +1,5 @@
-import Parser from "../parser/parser";
-import { transpileToJS } from "../compiler/transpiler";
+import Parser from "../parser/parser.js";
+import { transpileToJS } from "../compiler/transpiler.js";
 
 export default function jistscriptLoader(source: string) {
   const callback = this.async();
@@ -8,7 +8,7 @@ export default function jistscriptLoader(source: string) {
     const ast = parser.proTypeAsst(source);
     const jsCode = transpileToJS(ast, {
       target: "esnext",
-      module: "esm"
+      module: "esm",
     });
     callback(null, jsCode);
   } catch (error) {
