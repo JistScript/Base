@@ -26,7 +26,8 @@ interface TranspileOptions {
 export function transpileToJS(ast: Program, options: TranspileOptions = {}): string {
   const ctx = new TranspileContext(options);
   const programCode = transpileProgram(ast, ctx);
-  // State management runtime //
+
+  // Enhanced State management runtime with subscribe and getValue
   const runtime =
     options.injectRuntime !== false
       ? `// JistScript Runtime
@@ -42,20 +43,40 @@ function useState(initialValue, typeInfo) {
   const stateId = __jist_state_counter.value++;
 
   if (!__jist_state_store.has(stateId)) {
-    __jist_state_store.set(stateId, initialValue);
+    __jist_state_store.set(stateId, {
+      value: initialValue,
+      listeners: []
+    });
   }
 
-  const currentValue = __jist_state_store.get(stateId);
+  const stateEntry = __jist_state_store.get(stateId);
 
   const setState = (newValue) => {
     if (typeInfo && !validateType(newValue, typeInfo)) {
-      console.warn(\`[JistScript] Type mismatch: expected \${typeInfo.type}, got \${typeof newValue}\`);
+      console.warn(\`[JistScript] Type mismatch: expected \${typeInfo.typeName}, got \${typeof newValue}\`);
     }
-    __jist_state_store.set(stateId, newValue);
+    stateEntry.value = newValue;
+
+    stateEntry.listeners.forEach(listener => {
+      try {
+        listener();
+      } catch (e) {
+        console.error('[JistScript] Error in listener:', e);
+      }
+    });
+
     return newValue;
   };
 
-  return [currentValue, setState];
+  setState.subscribe = (callback) => {
+    stateEntry.listeners.push(callback);
+  };
+
+  setState.getValue = () => {
+    return stateEntry.value;
+  };
+
+  return [stateEntry.value, setState];
 }
 
 function validateType(value, typeInfo) {
@@ -145,6 +166,7 @@ function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
       ctx.indent--;
       return `${indent}function ${fn.name}(${params}) {\n${body}\n${indent}}`;
     }
+
     case "ReturnStatement": {
       const returnStmt = stmt as ReturnStatement;
       if (returnStmt.value) {
