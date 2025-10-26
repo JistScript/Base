@@ -18,6 +18,9 @@ export enum TokenType {
   Dot,
   StringLiteral,
   TypeAnnotation,
+  Spread,
+  Export,
+  Default,
   EOF,
 }
 
@@ -25,6 +28,8 @@ const ReservedKeywords: Record<string, TokenType> = {
   let: TokenType.Let,
   const: TokenType.Const,
   function: TokenType.Function,
+  export: TokenType.Export,
+  default: TokenType.Default,
 };
 
 // Built-in type keywords //
@@ -102,7 +107,14 @@ export function tokenize(sourceCode: string): Token[] {
         tokens.push(createToken(char, TokenType.Comma));
         break;
       case ".":
-        tokens.push(createToken(char, TokenType.Dot));
+        // Check for spread operator //
+        if (src.length >= 2 && src[0] === "." && src[1] === ".") {
+          src.shift();
+          src.shift();
+          tokens.push(createToken("...", TokenType.Spread));
+        } else {
+          tokens.push(createToken(char, TokenType.Dot));
+        }
         break;
       case '"': {
         let stringValue = "";

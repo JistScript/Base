@@ -17,6 +17,7 @@ export function jistscript(): Plugin {
           target: "esnext",
           module: "esm",
           injectRuntime: true,
+          autoExport: true,
         });
         return {
           code: jsCode,

@@ -19,12 +19,12 @@ interface TranspileOptions {
   jsx?: "react" | "react-jsx" | "preserve";
   sourcemap?: boolean;
   injectRuntime?: boolean;
+  autoExport?: boolean;
 }
 
 export function transpileToJS(ast: Program, options: TranspileOptions = {}): string {
   const ctx = new TranspileContext(options);
   const programCode = transpileProgram(ast, ctx);
-
   // State management runtime //
   const runtime =
     options.injectRuntime !== false
@@ -36,7 +36,6 @@ const mark = typeof window !== 'undefined' && window.console
 // State management system
 const __jist_state_counter = { value: 0 };
 const __jist_state_store = new Map();
-const __jist_component_states = new Map();
 
 function useState(initialValue, typeInfo) {
   const stateId = __jist_state_counter.value++;
@@ -59,7 +58,7 @@ function useState(initialValue, typeInfo) {
 }
 
 function validateType(value, typeInfo) {
-  switch (typeInfo.type) {
+  switch (typeInfo.typeName) {
     case 'String':
       return typeof value === 'string';
     case 'Number':
@@ -69,7 +68,7 @@ function validateType(value, typeInfo) {
     case 'Array':
       if (!Array.isArray(value)) return false;
       if (typeInfo.elementType) {
-        return value.every(item => validateType(item, { type: typeInfo.elementType }));
+        return value.every(item => validateType(item, { typeName: typeInfo.elementType }));
       }
       return true;
     case 'Object':
@@ -78,10 +77,29 @@ function validateType(value, typeInfo) {
       return true;
   }
 }
+
 `
       : "";
 
-  return runtime + programCode;
+  // Auto-export if enabled //
+  let exportCode = "";
+  if (options.autoExport) {
+    const functions = ast.body
+      .filter(stmt => stmt.kind === "FunctionDeclaration")
+      .map(stmt => (stmt as FunctionDeclaration).name);
+
+    if (functions.length > 0) {
+      const lastFunc = functions[functions.length - 1];
+      const namedExports = functions.slice(0, -1);
+
+      if (namedExports.length > 0) {
+        exportCode += `\nexport { ${namedExports.join(", ")} };`;
+      }
+      exportCode += `\nexport default ${lastFunc};`;
+    }
+  }
+
+  return runtime + programCode + exportCode;
 }
 
 class TranspileContext {
@@ -213,12 +231,11 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
 }
 
 function transpileTypeAnnotation(typeAnnotation: TypeAnnotation): string {
-  let typeInfo = `{ type: "${typeAnnotation.typeName}"`;
+  let typeInfo = `{ typeName: "${typeAnnotation.typeName}"`;
   if (typeAnnotation.genericTypes && typeAnnotation.genericTypes.length > 0) {
     const elementType = typeAnnotation.genericTypes[0].typeName;
     typeInfo += `, elementType: "${elementType}"`;
   }
-
   typeInfo += " }";
   return typeInfo;
 }
