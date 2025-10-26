@@ -1,6 +1,6 @@
 {
   "name": "jistscript",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A TypeScript-based scripting language engineered for data-centric applications, driven by robust data processing capabilities.",
   "type": "module",
   "main": "./dist/index.js",
