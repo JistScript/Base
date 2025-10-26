@@ -1,6 +1,6 @@
-import Parser from "./src/parser/parser";
-import { createGlobalEnv } from "./src/runtime/environment";
-import { evaluate } from "./src/runtime/interpreter";
+import Parser from "./src/parser/parser.js";
+import { createGlobalEnv } from "./src/runtime/environment.js";
+import { evaluate } from "./src/runtime/interpreter.js";
 repl();
 
 // Run time //

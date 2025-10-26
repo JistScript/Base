@@ -1,6 +1,6 @@
 import { Plugin } from "vite";
-import Parser from "../parser/parser";
-import { transpileToJS } from "../compiler/transpiler";
+import Parser from "../parser/parser.js";
+import { transpileToJS } from "../compiler/transpiler.js";
 
 export function jistscript(): Plugin {
   return {

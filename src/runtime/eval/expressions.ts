@@ -4,10 +4,10 @@ import {
   BinaryExpr,
   Identifier,
   ObjectLiteral,
-} from "../../parser/typeAst";
-import Environment from "../environment";
-import { evaluate } from "../interpreter";
-import { NEW_NULL, NumberVal, RuntimeVal, ArrayVal, ObjectVal } from "../values";
+} from "../../parser/typeAst.js";
+import Environment from "../environment.js";
+import { evaluate } from "../interpreter.js";
+import { NEW_NULL, NumberVal, RuntimeVal, ArrayVal, ObjectVal } from "../values.js";
 
 export function eval_array_literal(astNode: ArrayLiteral, env: Environment): ArrayVal {
   const elements = astNode.elements.map(element => evaluate(element, env));

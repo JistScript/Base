@@ -15,8 +15,8 @@ import {
   StringLiteral,
   ArrayLiteral,
   TypeAnnotation,
-} from "./typeAst";
-import { tokenize, Token, TokenType } from "./lexer";
+} from "./typeAst.js";
+import { tokenize, Token, TokenType } from "./lexer.js";
 
 export default class Parser {
   private tokens: Token[] = [];

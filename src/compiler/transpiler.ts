@@ -11,7 +11,7 @@ import {
   ArrayLiteral,
   AssignmentExpr,
   TypeAnnotation,
-} from "../parser/typeAst";
+} from "../parser/typeAst.js";
 
 interface TranspileOptions {
   target?: "es5" | "es6" | "esnext";

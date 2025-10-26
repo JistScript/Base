@@ -2,9 +2,9 @@ import { parseArgs } from "node:util";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { glob } from "glob";
-import Parser from "../parser/parser";
-import { transpileToJS } from "../compiler/transpiler";
-import { watch } from "./watch";
+import Parser from "../parser/parser.js";
+import { transpileToJS } from "../compiler/transpiler.js";
+import { watch } from "./watch.js";
 
 interface CompilerOptions {
   outDir?: string;

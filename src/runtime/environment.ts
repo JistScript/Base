@@ -7,7 +7,7 @@ import {
   NEW_ARRAY,
   StateTypeInfo,
   validateStateType,
-} from "./values";
+} from "./values.js";
 
 // Global state counter for useState //
 let stateIdCounter = 0;

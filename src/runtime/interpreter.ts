@@ -13,16 +13,16 @@ import {
   StringLiteral,
   ArrayLiteral,
   TypeAnnotation,
-} from "../parser/typeAst";
-import Environment from "./environment";
+} from "../parser/typeAst.js";
+import Environment from "./environment.js";
 import {
   eval_Identifier,
   eval_assignment,
   eval_binary_expr,
   eval_object_expr,
   eval_array_literal,
-} from "./eval/expressions";
-import { eval_program_expr, eval_function_declaration } from "./eval/evalStatements";
+} from "./eval/expressions.js";
+import { eval_program_expr, eval_function_declaration } from "./eval/evalStatements.js";
 
 export function evaluate(astNode: Statement, env: Environment): RuntimeVal {
   switch (astNode.kind) {

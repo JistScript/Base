@@ -1,5 +1,5 @@
-import Environment from "./environment";
-import { Statement } from "../parser/typeAst";
+import Environment from "./environment.js";
+import { Statement } from "../parser/typeAst.js";
 
 export type ValueTypes =
   | "null"
