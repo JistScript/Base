@@ -2,7 +2,7 @@
 
 > A TypeScript-based scripting language with **inline type annotations** for modern web development. State management without the boilerplate.
 
-## 🚀 What is JistScript?
+## ⚡️ What is JistScript?
 
 JistScript is a simple, powerful scripting language that compiles to JavaScript. It's designed for **data-centric applications** with built-in state management and inline type annotations.
 
@@ -122,7 +122,7 @@ setTags([1, 2, 3]);
 ### 📊 Complete Type System
 
 ```javascript
-// All supported types
+// All supported types //
 const [str, setStr] = useState:String("text");
 const [num, setNum] = useState:Number(42);
 const [bool, setBool] = useState:Boolean(false);
