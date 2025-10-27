@@ -7,6 +7,8 @@ export enum TokenType {
   Equals,
   Semicolon,
   BinaryOperator,
+  ComparisonOperator,
+  LogicalOperator,
   OpenParen,
   CloseParen,
   OpenBrace,
@@ -21,6 +23,8 @@ export enum TokenType {
   Spread,
   Export,
   Default,
+  Question,
+  Not,
   EOF,
 }
 
@@ -95,7 +99,67 @@ export function tokenize(sourceCode: string): Token[] {
         tokens.push(createToken(char, TokenType.BinaryOperator));
         break;
       case "=":
-        tokens.push(createToken(char, TokenType.Equals));
+        if (src.length > 0 && src[0] === "=") {
+          src.shift();
+          if (src.length > 0 && src[0] === "=") {
+            src.shift();
+            tokens.push(createToken("===", TokenType.ComparisonOperator));
+          } else {
+            tokens.push(createToken("==", TokenType.ComparisonOperator));
+          }
+        } else {
+          tokens.push(createToken(char, TokenType.Equals));
+        }
+        break;
+      case "!":
+        if (src.length > 0 && src[0] === "=") {
+          src.shift();
+          if (src.length > 0 && src[0] === "=") {
+            src.shift();
+            tokens.push(createToken("!==", TokenType.ComparisonOperator));
+          } else {
+            tokens.push(createToken("!=", TokenType.ComparisonOperator));
+          }
+        } else {
+          tokens.push(createToken(char, TokenType.Not));
+        }
+        break;
+      case "<":
+        if (src.length > 0 && src[0] === "=") {
+          src.shift();
+          tokens.push(createToken("<=", TokenType.ComparisonOperator));
+        } else {
+          tokens.push(createToken(char, TokenType.ComparisonOperator));
+        }
+        break;
+      case ">":
+        if (src.length > 0 && src[0] === "=") {
+          src.shift();
+          tokens.push(createToken(">=", TokenType.ComparisonOperator));
+        } else {
+          tokens.push(createToken(char, TokenType.ComparisonOperator));
+        }
+        break;
+      case "&":
+        if (src.length > 0 && src[0] === "&") {
+          src.shift();
+          tokens.push(createToken("&&", TokenType.LogicalOperator));
+        } else {
+          console.error("Unexpected & character. Did you mean &&?");
+          process.exit(1);
+        }
+        break;
+      case "|":
+        if (src.length > 0 && src[0] === "|") {
+          src.shift();
+          tokens.push(createToken("||", TokenType.LogicalOperator));
+        } else {
+          console.error("Unexpected | character. Did you mean ||?");
+          process.exit(1);
+        }
+        break;
+      case "?":
+        tokens.push(createToken(char, TokenType.Question));
         break;
       case ";":
         tokens.push(createToken(char, TokenType.Semicolon));
@@ -119,6 +183,15 @@ export function tokenize(sourceCode: string): Token[] {
       case '"': {
         let stringValue = "";
         while (src.length > 0 && src[0] !== '"') {
+          stringValue += src.shift()!;
+        }
+        src.shift();
+        tokens.push(createToken(stringValue, TokenType.StringLiteral));
+        break;
+      }
+      case "'": {
+        let stringValue = "";
+        while (src.length > 0 && src[0] !== "'") {
           stringValue += src.shift()!;
         }
         src.shift();
