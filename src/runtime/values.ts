@@ -17,12 +17,9 @@ export interface RuntimeVal {
   type: ValueTypes;
 }
 
-export class StringValue implements RuntimeVal {
-  type: "string" = "string";
+export interface StringValue extends RuntimeVal {
+  type: "string";
   value: string;
-  constructor(value: string) {
-    this.value = value;
-  }
 }
 export interface ArrayVal extends RuntimeVal {
   type: "array";
@@ -96,8 +93,8 @@ export function NEW_UNDEFINED() {
   return { type: "undefined" } as RuntimeVal;
 }
 
-export function NEW_STRING(s = "") {
-  return new StringValue(s);
+export function NEW_STRING(s = ""): StringValue {
+  return { type: "string", value: s };
 }
 
 export function NEW_ARRAY(elements: RuntimeVal[] = []) {
