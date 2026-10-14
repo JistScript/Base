@@ -280,8 +280,6 @@ mark("Debug message");
 - **Logical operators**: `&&`, `||`, `!`
 - **Ternary operator**: `? :`
 - **Comments**: `//` and `/* */`
-- **If statements**: `if`, `else`, `else if`
-- **Loops**: `for`, `while`
 - **Single quotes**: `'string'`
 - **Arrow functions**: `() => {}`
 - **Template literals**: `` `string ${var}` ``
@@ -372,7 +370,7 @@ MIT © [Joel Deon Dsouza](https://github.com/JistScript)
 
 ## 📊 Project Status
 
-- **Current Version**: 1.1.6
+- **Current Version**: 1.1.8
 - **Status**: Active Development
 
 ## 🙏 Acknowledgments
