@@ -14,6 +14,10 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./runtime": {
+      "types": "./dist/runtime/stdlib.d.ts",
+      "import": "./dist/runtime/stdlib.js"
+    },
     "./plugin-vite": {
       "import": "./dist/plugins/vite-plugin.js",
       "types": "./dist/plugins/vite-plugin.d.ts"

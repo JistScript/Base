@@ -1,3 +1,5 @@
+import { JistSyntaxError } from "./errors";
+
 export enum TokenType {
   Number,
   Identifier,
@@ -26,15 +28,30 @@ export enum TokenType {
   Question,
   Not,
   EOF,
+  If,
+  Else,
+  For,
+  While,
+  Of,
+  Return,
+  Arrow,
+  Pipe,
 }
 
-const ReservedKeywords: Record<string, TokenType> = {
-  let: TokenType.Let,
-  const: TokenType.Const,
-  function: TokenType.Function,
-  export: TokenType.Export,
-  default: TokenType.Default,
-};
+// Map (not a plain object) so identifiers like "constructor" or "toString" //
+const ReservedKeywords = new Map<string, TokenType>([
+  ["let", TokenType.Let],
+  ["const", TokenType.Const],
+  ["function", TokenType.Function],
+  ["export", TokenType.Export],
+  ["default", TokenType.Default],
+  ["if", TokenType.If],
+  ["else", TokenType.Else],
+  ["for", TokenType.For],
+  ["while", TokenType.While],
+  ["of", TokenType.Of],
+  ["return", TokenType.Return],
+]);
 
 // Built-in type keywords //
 const TypeKeywords = new Set(["String", "Number", "Boolean", "Array", "Object", "Any", "Void"]);
@@ -63,6 +80,21 @@ function isInt(char: string): boolean {
 
 function isAlphaNumeric(char: string): boolean {
   return isAlphabetic(char) || isInt(char);
+}
+
+// Reads a string body up to the closing quote, handling escape sequences //
+function readString(src: string[], quote: string): string {
+  let out = "";
+  while (src.length > 0 && src[0] !== quote) {
+    const c = src.shift()!;
+    if (c === "\\" && src.length > 0) {
+      const n = src.shift()!;
+      out += n === "n" ? "\n" : n === "t" ? "\t" : n;
+    } else out += c;
+  }
+  if (src.length === 0) throw new JistSyntaxError("Unterminated string literal");
+  src.shift(); // closing quote
+  return out;
 }
 
 export function tokenize(sourceCode: string): Token[] {
@@ -94,11 +126,28 @@ export function tokenize(sourceCode: string): Token[] {
       case "+":
       case "-":
       case "*":
-      case "/":
       case "%":
         tokens.push(createToken(char, TokenType.BinaryOperator));
         break;
+      case "/": {
+        const next: string | undefined = src[0];
+        if (next === "/") {
+          while (src.length > 0 && src[0] !== "\n") src.shift();
+        } else if (next === "*") {
+          src.shift();
+          while (src.length > 0 && !(src[0] === "*" && src[1] === "/")) src.shift();
+          if (src.length === 0) throw new JistSyntaxError("Unterminated block comment");
+          src.shift();
+          src.shift();
+        } else tokens.push(createToken(char, TokenType.BinaryOperator));
+        break;
+      }
       case "=":
+        if (src[0] === ">") {
+          src.shift();
+          tokens.push(createToken("=>", TokenType.Arrow));
+          break;
+        }
         if (src.length > 0 && src[0] === "=") {
           src.shift();
           if (src.length > 0 && src[0] === "=") {
@@ -145,18 +194,17 @@ export function tokenize(sourceCode: string): Token[] {
           src.shift();
           tokens.push(createToken("&&", TokenType.LogicalOperator));
         } else {
-          console.error("Unexpected & character. Did you mean &&?");
-          process.exit(1);
+          throw new JistSyntaxError("Unexpected '&'. Did you mean '&&'?");
         }
         break;
       case "|":
-        if (src.length > 0 && src[0] === "|") {
+        if (src[0] === "|") {
           src.shift();
           tokens.push(createToken("||", TokenType.LogicalOperator));
-        } else {
-          console.error("Unexpected | character. Did you mean ||?");
-          process.exit(1);
-        }
+        } else if (src[0] === ">") {
+          src.shift();
+          tokens.push(createToken("|>", TokenType.Pipe));
+        } else throw new JistSyntaxError("Unexpected '|'. Did you mean '||' or '|>'?");
         break;
       case "?":
         tokens.push(createToken(char, TokenType.Question));
@@ -180,24 +228,10 @@ export function tokenize(sourceCode: string): Token[] {
           tokens.push(createToken(char, TokenType.Dot));
         }
         break;
-      case '"': {
-        let stringValue = "";
-        while (src.length > 0 && src[0] !== '"') {
-          stringValue += src.shift()!;
-        }
-        src.shift();
-        tokens.push(createToken(stringValue, TokenType.StringLiteral));
+      case '"':
+      case "'":
+        tokens.push(createToken(readString(src, char), TokenType.StringLiteral));
         break;
-      }
-      case "'": {
-        let stringValue = "";
-        while (src.length > 0 && src[0] !== "'") {
-          stringValue += src.shift()!;
-        }
-        src.shift();
-        tokens.push(createToken(stringValue, TokenType.StringLiteral));
-        break;
-      }
       default:
         if (isInt(char)) {
           let num = char;
@@ -213,19 +247,14 @@ export function tokenize(sourceCode: string): Token[] {
           if (TypeKeywords.has(ident)) {
             tokens.push(createToken(ident, TokenType.TypeAnnotation));
           } else {
-            const reserved = ReservedKeywords[ident];
-            if (reserved !== undefined) {
-              tokens.push(createToken(ident, reserved));
-            } else {
-              tokens.push(createToken(ident, TokenType.Identifier));
-            }
+            tokens.push(createToken(ident, ReservedKeywords.get(ident) ?? TokenType.Identifier));
           }
         } else if (isSkippable(char)) {
           continue;
         } else {
-          console.error("Unrecognized character found in source:", char.charCodeAt(0), char);
-          process.exit(1);
-          // Deno.exit(1);
+          throw new JistSyntaxError(
+            `Unrecognized character '${char}' (code ${char.charCodeAt(0)})`
+          );
         }
     }
   }

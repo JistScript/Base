@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export type NodeType =
   | "Program"
   | "NumericLiteral"
@@ -58,7 +59,8 @@ export type NodeType =
   | "BigIntLiteral"
   | "StateHookCall"
   | "ArrayDestructuring"
-  | "TypeAnnotation";
+  | "TypeAnnotation"
+  | "ForOfStatement";
 
 // statement //
 export interface Statement {
@@ -409,4 +411,12 @@ export interface DirectiveLiteral extends Expression {
 export interface BigIntLiteral extends Expression {
   kind: "BigIntLiteral";
   value: bigint;
+}
+
+export interface ForOfStatement extends Statement {
+  kind: "ForOfStatement";
+  constant: boolean;
+  variable: string;
+  iterable: Expression;
+  body: Statement[];
 }

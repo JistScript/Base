@@ -2,7 +2,6 @@ import {
   Statement,
   Program,
   Expression,
-  BinaryExpr,
   Identifier,
   NumericLiteral,
   VarDeclaration,
@@ -15,8 +14,12 @@ import {
   StringLiteral,
   ArrayLiteral,
   TypeAnnotation,
+  IfStatement,
+  ForOfStatement,
+  ArrowFunctionExpression,
 } from "./typeAst.js";
 import { tokenize, Token, TokenType } from "./lexer.js";
+import { JistSyntaxError } from "./errors.js";
 
 export default class Parser {
   private tokens: Token[] = [];
@@ -34,12 +37,10 @@ export default class Parser {
     return prev;
   }
 
-  private expectRender(type: TokenType, err: any) {
+  private expectRender(type: TokenType, err: string) {
     const prev = this.tokens.shift() as Token;
     if (!prev || prev.type != type) {
-      console.error("Parser Error:\n", err, prev, "- Expect: ", type);
-      process.exit(1);
-      // Deno.exit(1);
+      throw new JistSyntaxError(`${err} (got "${prev?.value}")`);
     }
     return prev;
   }
@@ -58,20 +59,25 @@ export default class Parser {
     return program;
   }
 
+  // ---------------------------------------------------------------------------
+  // Statements
+  // ---------------------------------------------------------------------------
+
   private parseStatement(): Statement {
-    // skip parseStatement //
     switch (this.at().type) {
       case TokenType.Let:
       case TokenType.Const:
         return this.parse_var_declaration();
       case TokenType.Function:
         return this.parse_function_declaration();
-      case TokenType.Identifier:
-        // Check if this is a return statement //
-        if (this.at().value === "return") {
-          return this.parse_return_statement();
-        }
-      // Fall through to default for other identifiers //
+      case TokenType.Return:
+        return this.parse_return_statement();
+      case TokenType.If:
+        return this.parse_if_statement();
+      case TokenType.While:
+        return this.parse_while_statement();
+      case TokenType.For:
+        return this.parse_for_of_statement();
       default: {
         const expr = this.parseExpression();
         if (this.at().type === TokenType.Semicolon) {
@@ -82,23 +88,61 @@ export default class Parser {
     }
   }
 
+  private parse_block(): Statement[] {
+    this.expectRender(TokenType.OpenBrace, "Expected '{'");
+    const body: Statement[] = [];
+    while (this.notEOF() && this.at().type !== TokenType.CloseBrace)
+      body.push(this.parseStatement());
+    this.expectRender(TokenType.CloseBrace, "Expected '}'");
+    return body;
+  }
+
   private parse_return_statement(): Statement {
     this.next();
-    if (this.at().type === TokenType.Semicolon) {
+    const t = this.at().type;
+    const value =
+      t === TokenType.Semicolon || t === TokenType.CloseBrace ? undefined : this.parseExpression();
+    if (this.at().type === TokenType.Semicolon) this.next();
+    return { kind: "ReturnStatement", value } as any;
+  }
+
+  private parse_if_statement(): IfStatement {
+    this.next();
+    this.expectRender(TokenType.OpenParen, "Expected '(' after if");
+    const test = this.parseExpression();
+    this.expectRender(TokenType.CloseParen, "Expected ')' after condition");
+    const consequent = this.parse_block();
+    let alternate: Statement[] | IfStatement | undefined;
+    if (this.at().type === TokenType.Else) {
       this.next();
-      return {
-        kind: "ReturnStatement",
-        value: undefined,
-      } as any;
+      alternate = this.at().type === TokenType.If ? this.parse_if_statement() : this.parse_block();
     }
-    const value = this.parseExpression();
-    if (this.at().type === TokenType.Semicolon) {
-      this.next();
-    }
+    return { kind: "IfStatement", test, consequent, alternate };
+  }
+
+  private parse_while_statement(): Statement {
+    this.next();
+    this.expectRender(TokenType.OpenParen, "Expected '(' after while");
+    const test = this.parseExpression();
+    this.expectRender(TokenType.CloseParen, "Expected ')'");
+    return { kind: "WhileStatement", test, body: this.parse_block() } as Statement;
+  }
+
+  private parse_for_of_statement(): Statement {
+    this.next();
+    this.expectRender(TokenType.OpenParen, "Expected '(' after for");
+    const constant = this.next().type === TokenType.Const;
+    const variable = this.expectRender(TokenType.Identifier, "Expected loop variable").value;
+    this.expectRender(TokenType.Of, "Expected 'of'");
+    const iterable = this.parseExpression();
+    this.expectRender(TokenType.CloseParen, "Expected ')'");
     return {
-      kind: "ReturnStatement",
-      value,
-    } as any;
+      kind: "ForOfStatement",
+      constant,
+      variable,
+      iterable,
+      body: this.parse_block(),
+    } as ForOfStatement;
   }
 
   parse_function_declaration(): Statement {
@@ -108,17 +152,11 @@ export default class Parser {
     const params: string[] = [];
     for (const arg of args) {
       if (arg.kind != "Identifier") {
-        console.log(arg);
-        throw "Expected declaration inside function to be a string";
+        throw new JistSyntaxError("Function parameters must be plain identifiers");
       }
       params.push((arg as Identifier).symbol);
     }
-    this.expectRender(TokenType.OpenBrace, "Function expected a body declaration");
-    const body: Statement[] = [];
-    while (this.at().type != TokenType.EOF && this.at().type != TokenType.CloseBrace) {
-      body.push(this.parseStatement());
-    }
-    this.expectRender(TokenType.CloseBrace, "Required a closing brace for a function declaration");
+    const body = this.parse_block();
     const fn = {
       kind: "FunctionDeclaration",
       parameters: params,
@@ -140,7 +178,7 @@ export default class Parser {
     if (this.at().type == TokenType.Semicolon) {
       this.next();
       if (isConstant) {
-        throw "Assigned value to constant, but no value provided";
+        throw new JistSyntaxError("Constant declaration requires a value");
       }
       return {
         kind: "VarDeclaration",
@@ -168,7 +206,7 @@ export default class Parser {
       if (this.at().type === TokenType.Comma) {
         this.next();
       } else if (this.at().type !== TokenType.CloseBracket) {
-        throw "Expected comma or closing bracket in destructuring";
+        throw new JistSyntaxError("Expected comma or closing bracket in destructuring");
       }
     }
     this.expectRender(TokenType.CloseBracket, "Expected closing bracket in destructuring");
@@ -187,6 +225,7 @@ export default class Parser {
     } as VarDeclaration;
   }
 
+  // Expressions (lowest to highest precedence)//
   private parseExpression(): Expression {
     return this.parse_assignment_expr();
   }
@@ -203,7 +242,7 @@ export default class Parser {
 
   private parse_obj_expr(): Expression {
     if (this.at().type != TokenType.OpenBrace) {
-      return this.parse_add_expr();
+      return this.parse_ternary_expr();
     }
     this.next();
     const properties = new Array<Property>();
@@ -233,59 +272,77 @@ export default class Parser {
     return { kind: "ObjectLiteral", properties } as ObjectLiteral;
   }
 
-  // add and sub //
-  private parse_add_expr(): Expression {
-    let left = this.parse_multi_expr();
-    while (this.at().value == "+" || this.at().value == "-") {
-      const operator = this.next().value;
-      const right = this.parse_multi_expr();
-      left = {
-        kind: "BinaryExpr",
-        left,
-        right,
-        operator,
-      } as BinaryExpr;
+  private parse_ternary_expr(): Expression {
+    const test = this.parse_pipe_expr();
+    if (this.at().type !== TokenType.Question) return test;
+    this.next();
+    const consequent = this.parseExpression();
+    this.expectRender(TokenType.Colon, "Expected ':' in conditional expression");
+    const alternate = this.parseExpression();
+    return { kind: "ConditionalExpr", test, consequent, alternate } as Expression;
+  }
+
+  // `a |> f(b)` desugars to f(a, b); `a |> f` desugars to f(a)
+  private parse_pipe_expr(): Expression {
+    let left = this.parse_or_expr();
+    while (this.at().type === TokenType.Pipe) {
+      this.next();
+      const right = this.parse_or_expr();
+      left =
+        right.kind === "CallExpr"
+          ? ({ ...right, args: [left, ...(right as CallExpr).args] } as CallExpr)
+          : ({ kind: "CallExpr", caller: right, args: [left] } as CallExpr);
     }
     return left;
   }
 
-  // multi //
-  private parse_multi_expr(): Expression {
-    let left = this.parse_call_member_expr();
-    while (this.at().value == "/" || this.at().value == "*" || this.at().value == "%") {
+  private binaryLevel(next: () => Expression, ops: string[], kind: string): Expression {
+    const opTypes = [
+      TokenType.BinaryOperator,
+      TokenType.ComparisonOperator,
+      TokenType.LogicalOperator,
+    ];
+    let left = next();
+    while (opTypes.includes(this.at().type) && ops.includes(this.at().value)) {
       const operator = this.next().value;
-      const right = this.parse_call_member_expr();
-      left = {
-        kind: "BinaryExpr",
-        left,
-        right,
-        operator,
-      } as BinaryExpr;
+      left = { kind, left, right: next(), operator } as Expression;
     }
     return left;
   }
-
-  private parse_call_member_expr(): Expression {
-    const member = this.parse_member_expr();
-    if (this.at().type == TokenType.OpenParen) {
-      return this.parse_call_expr(member);
-    }
-    return member;
+  private parse_or_expr() {
+    return this.binaryLevel(() => this.parse_and_expr(), ["||"], "LogicalExpr");
+  }
+  private parse_and_expr() {
+    return this.binaryLevel(() => this.parse_equality_expr(), ["&&"], "LogicalExpr");
+  }
+  private parse_equality_expr() {
+    return this.binaryLevel(
+      () => this.parse_relational_expr(),
+      ["==", "!=", "===", "!=="],
+      "BinaryExpr"
+    );
+  }
+  private parse_relational_expr() {
+    return this.binaryLevel(() => this.parse_add_expr(), ["<", "<=", ">", ">="], "BinaryExpr");
+  }
+  private parse_add_expr() {
+    return this.binaryLevel(() => this.parse_multi_expr(), ["+", "-"], "BinaryExpr");
+  }
+  private parse_multi_expr() {
+    return this.binaryLevel(() => this.parse_unary_expr(), ["*", "/", "%"], "BinaryExpr");
   }
 
-  private parse_call_expr(caller: Expression): Expression {
-    const args = this.parse_args();
-    let call_expr: Expression = {
-      kind: "CallExpr",
-      caller,
-      args,
-    } as CallExpr;
-    // Handle chained calls //
-    if (this.at().type == TokenType.OpenParen) {
-      call_expr = this.parse_call_expr(call_expr);
+  private parse_unary_expr(): Expression {
+    const t = this.at();
+    if (t.type === TokenType.Not || (t.type === TokenType.BinaryOperator && t.value === "-")) {
+      this.next();
+      return {
+        kind: "UnaryExpr",
+        operator: t.value,
+        argument: this.parse_unary_expr(),
+      } as Expression;
     }
-
-    return call_expr;
+    return this.parse_member_expr();
   }
 
   private parse_type_annotation(): { typeAnnotation: TypeAnnotation; functionArgs?: Expression[] } {
@@ -360,8 +417,15 @@ export default class Parser {
     while (
       this.at().type == TokenType.Dot ||
       this.at().type == TokenType.OpenBracket ||
-      this.at().type == TokenType.Colon
+      this.at().type == TokenType.OpenParen ||
+      // ':' is a type annotation only when a type name follows (so `a ? b : c` still works)
+      (this.at().type == TokenType.Colon && this.tokens[1]?.type === TokenType.TypeAnnotation)
     ) {
+      if (this.at().type == TokenType.OpenParen) {
+        object = { kind: "CallExpr", caller: object, args: this.parse_args() } as CallExpr;
+        continue;
+      }
+
       if (this.at().type == TokenType.Colon) {
         this.next();
         const result = this.parse_type_annotation();
@@ -388,7 +452,7 @@ export default class Parser {
         property = this.parse_prime_expr();
         computed = false;
         if (property.kind != "Identifier") {
-          throw `Invalid property dot operator without identifier`;
+          throw new JistSyntaxError("Invalid property dot operator without identifier");
         }
       } else {
         property = this.parseExpression();
@@ -400,11 +464,38 @@ export default class Parser {
     return object;
   }
 
+  // Arrow functions //
+
+  private isArrowAhead(): boolean {
+    let depth = 0;
+    for (let i = 0; i < this.tokens.length; i++) {
+      const t = this.tokens[i].type;
+      if (t === TokenType.OpenParen) depth++;
+      else if (t === TokenType.CloseParen && --depth === 0)
+        return this.tokens[i + 1]?.type === TokenType.Arrow;
+      else if (t === TokenType.EOF) return false;
+    }
+    return false;
+  }
+
+  private parse_arrow_body(parameters: string[]): Expression {
+    this.expectRender(TokenType.Arrow, "Expected '=>'");
+    const body: Statement[] =
+      this.at().type === TokenType.OpenBrace
+        ? this.parse_block()
+        : [{ kind: "ReturnStatement", value: this.parse_assignment_expr() } as any];
+    return { kind: "ArrowFunctionExpression", parameters, body } as ArrowFunctionExpression;
+  }
+
   // parser primary //
   private parse_prime_expr(): Expression {
     const tk = this.at().type;
     switch (tk) {
       case TokenType.Identifier:
+        if (this.tokens[1]?.type === TokenType.Arrow) {
+          const param = this.next().value;
+          return this.parse_arrow_body([param]);
+        }
         return { kind: "Identifier", symbol: this.next().value } as Identifier;
       case TokenType.Number:
         return {
@@ -417,6 +508,15 @@ export default class Parser {
           value: this.next().value,
         } as StringLiteral;
       case TokenType.OpenParen: {
+        if (this.isArrowAhead()) {
+          const params = this.parse_args().map(a => {
+            if (a.kind !== "Identifier") {
+              throw new JistSyntaxError("Arrow function parameters must be plain identifiers");
+            }
+            return (a as Identifier).symbol;
+          });
+          return this.parse_arrow_body(params);
+        }
         this.next();
         const value = this.parseExpression();
         this.expectRender(
@@ -433,16 +533,14 @@ export default class Parser {
           if (this.at().type === TokenType.Comma) {
             this.next();
           } else if (this.at().type !== TokenType.CloseBracket) {
-            throw "Expected comma or closing bracket in array literal";
+            throw new JistSyntaxError("Expected comma or closing bracket in array literal");
           }
         }
         this.expectRender(TokenType.CloseBracket, "Expected closing bracket for array literal");
         return { kind: "ArrayLiteral", elements } as ArrayLiteral;
       }
       default:
-        console.error("Error token found in parsing", this.at());
-        process.exit(1);
-      // Deno.exit(1);
+        throw new JistSyntaxError(`Unexpected token "${this.at().value}"`);
     }
   }
 }

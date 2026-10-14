@@ -12,6 +12,12 @@ import {
   AssignmentExpr,
   TypeAnnotation,
   ReturnStatement,
+  IfStatement,
+  WhileStatement,
+  ForOfStatement,
+  UnaryExpr,
+  ConditionalExpr,
+  ArrowFunctionExpression,
 } from "../parser/typeAst.js";
 
 interface TranspileOptions {
@@ -22,6 +28,22 @@ interface TranspileOptions {
   injectRuntime?: boolean;
   autoExport?: boolean;
 }
+
+// Names exported by "jistscript/runtime" that are auto-imported into every program //
+const STDLIB = [
+  "sum",
+  "avg",
+  "pluck",
+  "where",
+  "sortBy",
+  "groupBy",
+  "summarize",
+  "table",
+  "barChart",
+  "toHTML",
+  "render",
+  "parseCSV",
+];
 
 export function transpileToJS(ast: Program, options: TranspileOptions = {}): string {
   const ctx = new TranspileContext(options);
@@ -121,7 +143,24 @@ function validateType(value, typeInfo) {
     }
   }
 
-  return runtime + programCode + exportCode;
+  // Auto-import the stdlib, skipping any name the program declares itself //
+  const declared = new Set<string>();
+  for (const s of ast.body) {
+    if (s.kind === "FunctionDeclaration") declared.add((s as FunctionDeclaration).name);
+    if (s.kind === "VarDeclaration") {
+      const d = s as VarDeclaration;
+      if (d.destructuring) d.destructuring.elements.forEach(e => declared.add(e.symbol));
+      else declared.add(d.identifier);
+    }
+  }
+  const names = STDLIB.filter(n => !declared.has(n)).join(", ");
+  const stdlibImport = names
+    ? options.module === "commonjs"
+      ? `const { ${names} } = require("jistscript/runtime");\n`
+      : `import { ${names} } from "jistscript/runtime";\n`
+    : "";
+
+  return stdlibImport + runtime + programCode + exportCode;
 }
 
 class TranspileContext {
@@ -137,9 +176,43 @@ class TranspileContext {
   }
 }
 
+// Expression kinds that must be parenthesized when used as an operand, so precedence survives //
+const WRAP = new Set([
+  "BinaryExpr",
+  "LogicalExpr",
+  "ConditionalExpr",
+  "ArrowFunctionExpression",
+  "AssignmentExpr",
+  "UnaryExpr",
+]);
+
+function operand(e: Expression, ctx: TranspileContext): string {
+  const code = transpileExpression(e, ctx);
+  return WRAP.has(e.kind) ? `(${code})` : code;
+}
+
 function transpileProgram(program: Program, ctx: TranspileContext): string {
   const statements = program.body.map(stmt => transpileStatement(stmt, ctx));
   return statements.join("\n");
+}
+
+function transpileBlock(body: Statement[], ctx: TranspileContext): string {
+  ctx.indent++;
+  const code = body.map(s => transpileStatement(s, ctx)).join("\n");
+  ctx.indent--;
+  return `{\n${code}\n${ctx.getIndent()}}`;
+}
+
+function transpileIf(node: IfStatement, ctx: TranspileContext, prefix: string): string {
+  let out = `${prefix}if (${transpileExpression(node.test, ctx)}) ${transpileBlock(node.consequent, ctx)}`;
+  if (node.alternate) {
+    out +=
+      " else " +
+      (Array.isArray(node.alternate)
+        ? transpileBlock(node.alternate, ctx)
+        : transpileIf(node.alternate, ctx, ""));
+  }
+  return out;
 }
 
 function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
@@ -161,10 +234,7 @@ function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
     case "FunctionDeclaration": {
       const fn = stmt as FunctionDeclaration;
       const params = fn.parameters.join(", ");
-      ctx.indent++;
-      const body = fn.body.map(s => transpileStatement(s, ctx)).join("\n");
-      ctx.indent--;
-      return `${indent}function ${fn.name}(${params}) {\n${body}\n${indent}}`;
+      return `${indent}function ${fn.name}(${params}) ${transpileBlock(fn.body, ctx)}`;
     }
 
     case "ReturnStatement": {
@@ -176,19 +246,21 @@ function transpileStatement(stmt: Statement, ctx: TranspileContext): string {
       return `${indent}return;`;
     }
 
-    case "AssignmentExpr":
-    case "BinaryExpr":
-    case "CallExpr":
-    case "Identifier":
-    case "NumericLiteral":
-    case "StringLiteral":
-    case "ArrayLiteral":
-    case "ObjectLiteral":
-    case "MemberExpr":
-      return `${indent}${transpileExpression(stmt as Expression, ctx)};`;
+    case "IfStatement":
+      return transpileIf(stmt as IfStatement, ctx, indent);
+
+    case "WhileStatement": {
+      const w = stmt as WhileStatement;
+      return `${indent}while (${transpileExpression(w.test, ctx)}) ${transpileBlock(w.body, ctx)}`;
+    }
+
+    case "ForOfStatement": {
+      const f = stmt as ForOfStatement;
+      return `${indent}for (${f.constant ? "const" : "let"} ${f.variable} of ${transpileExpression(f.iterable, ctx)}) ${transpileBlock(f.body, ctx)}`;
+    }
 
     default:
-      return `${indent}/* Unsupported: ${stmt.kind} */`;
+      return `${indent}${transpileExpression(stmt as Expression, ctx)};`;
   }
 }
 
@@ -198,16 +270,39 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
       return String((expr as any).value);
 
     case "StringLiteral":
-      return `"${(expr as any).value}"`;
+      return JSON.stringify((expr as any).value);
 
     case "Identifier":
       return (expr as any).symbol;
 
-    case "BinaryExpr": {
-      const bin = expr as BinaryExpr;
-      const left = transpileExpression(bin.left, ctx);
-      const right = transpileExpression(bin.right, ctx);
-      return `${left} ${bin.operator} ${right}`;
+    case "BinaryExpr":
+    case "LogicalExpr": {
+      const b = expr as BinaryExpr;
+      return `${operand(b.left, ctx)} ${b.operator} ${operand(b.right, ctx)}`;
+    }
+
+    case "UnaryExpr": {
+      const u = expr as UnaryExpr;
+      return `${u.operator}${operand(u.argument, ctx)}`;
+    }
+
+    case "ConditionalExpr": {
+      const c = expr as ConditionalExpr;
+      return `${operand(c.test, ctx)} ? ${transpileExpression(c.consequent, ctx)} : ${operand(c.alternate, ctx)}`;
+    }
+
+    case "ArrowFunctionExpression": {
+      const fn = expr as ArrowFunctionExpression;
+      const params = fn.parameters.join(", ");
+      const only =
+        fn.body.length === 1 && fn.body[0].kind === "ReturnStatement"
+          ? ((fn.body[0] as ReturnStatement).value as Expression | undefined)
+          : undefined;
+      if (only) {
+        const v = transpileExpression(only, ctx);
+        return `(${params}) => ${only.kind === "ObjectLiteral" ? `(${v})` : v}`;
+      }
+      return `(${params}) => ${transpileBlock(fn.body, ctx)}`;
     }
 
     case "AssignmentExpr": {
@@ -219,7 +314,7 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
 
     case "CallExpr": {
       const call = expr as CallExpr;
-      const caller = transpileExpression(call.caller, ctx);
+      const caller = operand(call.caller, ctx);
       if (caller === "useState" && call.typeAnnotation) {
         const typeInfo = transpileTypeAnnotation(call.typeAnnotation);
         const args = call.args.map(arg => transpileExpression(arg, ctx)).join(", ");
@@ -231,7 +326,7 @@ function transpileExpression(expr: Expression, ctx: TranspileContext): string {
 
     case "MemberExpr": {
       const member = expr as MemberExpr;
-      const obj = transpileExpression(member.object, ctx);
+      const obj = operand(member.object, ctx);
       const prop = transpileExpression(member.property, ctx);
       return member.computed ? `${obj}[${prop}]` : `${obj}.${prop}`;
     }
